@@ -1,0 +1,31 @@
+C:\Users\Daniel Tumelo\Documents\0rison\Otter\bin\Debug\csfml-audio-2.dll
+C:\Users\Daniel Tumelo\Documents\0rison\Otter\bin\Debug\csfml-graphics-2.dll
+C:\Users\Daniel Tumelo\Documents\0rison\Otter\bin\Debug\csfml-system-2.dll
+C:\Users\Daniel Tumelo\Documents\0rison\Otter\bin\Debug\csfml-window-2.dll
+C:\Users\Daniel Tumelo\Documents\0rison\Otter\bin\Debug\openal32.dll
+C:\Users\Daniel Tumelo\Documents\0rison\Otter\bin\Debug\csfml-network-2.dll
+C:\Users\Daniel Tumelo\Documents\0rison\Otter\bin\Debug\libsndfile-1.dll
+C:\Users\Daniel Tumelo\Documents\0rison\Otter\bin\Debug\Otter.dll
+C:\Users\Daniel Tumelo\Documents\0rison\Otter\bin\Debug\Otter.pdb
+C:\Users\Daniel Tumelo\Documents\0rison\Otter\bin\Debug\sfmlnet-audio-2.dll
+C:\Users\Daniel Tumelo\Documents\0rison\Otter\bin\Debug\sfmlnet-graphics-2.dll
+C:\Users\Daniel Tumelo\Documents\0rison\Otter\bin\Debug\sfmlnet-system-2.dll
+C:\Users\Daniel Tumelo\Documents\0rison\Otter\bin\Debug\sfmlnet-window-2.dll
+C:\Users\Daniel Tumelo\Documents\0rison\Otter\obj\x86\Debug\Otter.dll
+C:\Users\Daniel Tumelo\Documents\0rison\Otter\obj\x86\Debug\Otter.pdb
+C:\Users\Daniel Tumelo\Documents\0rison\0rison Framework\bin\Debug\csfml-audio-2.dll
+C:\Users\Daniel Tumelo\Documents\0rison\0rison Framework\bin\Debug\csfml-graphics-2.dll
+C:\Users\Daniel Tumelo\Documents\0rison\0rison Framework\bin\Debug\csfml-system-2.dll
+C:\Users\Daniel Tumelo\Documents\0rison\0rison Framework\bin\Debug\csfml-window-2.dll
+C:\Users\Daniel Tumelo\Documents\0rison\0rison Framework\bin\Debug\openal32.dll
+C:\Users\Daniel Tumelo\Documents\0rison\0rison Framework\bin\Debug\csfml-network-2.dll
+C:\Users\Daniel Tumelo\Documents\0rison\0rison Framework\bin\Debug\libsndfile-1.dll
+C:\Users\Daniel Tumelo\Documents\0rison\0rison Framework\bin\Debug\sfmlnet-audio-2.dll
+C:\Users\Daniel Tumelo\Documents\0rison\0rison Framework\bin\Debug\sfmlnet-graphics-2.dll
+C:\Users\Daniel Tumelo\Documents\0rison\0rison Framework\bin\Debug\sfmlnet-system-2.dll
+C:\Users\Daniel Tumelo\Documents\0rison\0rison Framework\bin\Debug\sfmlnet-window-2.dll
+C:\Users\Daniel Tumelo\Documents\0rison\0rison Framework\obj\x86\Debug\0rison.csprojResolveAssemblyReference.cache
+C:\Users\Daniel Tumelo\Documents\0rison\0rison Framework\bin\Debug\0rison.dll
+C:\Users\Daniel Tumelo\Documents\0rison\0rison Framework\bin\Debug\0rison.pdb
+C:\Users\Daniel Tumelo\Documents\0rison\0rison Framework\obj\x86\Debug\0rison.dll
+C:\Users\Daniel Tumelo\Documents\0rison\0rison Framework\obj\x86\Debug\0rison.pdb

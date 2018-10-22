@@ -1,0 +1,16 @@
+C:\Users\Daniel Tumelo\Documents\0rison\Otter\bin\Release\csfml-audio-2.dll
+C:\Users\Daniel Tumelo\Documents\0rison\Otter\bin\Release\csfml-graphics-2.dll
+C:\Users\Daniel Tumelo\Documents\0rison\Otter\bin\Release\csfml-system-2.dll
+C:\Users\Daniel Tumelo\Documents\0rison\Otter\bin\Release\csfml-window-2.dll
+C:\Users\Daniel Tumelo\Documents\0rison\Otter\bin\Release\openal32.dll
+C:\Users\Daniel Tumelo\Documents\0rison\Otter\bin\Release\csfml-network-2.dll
+C:\Users\Daniel Tumelo\Documents\0rison\Otter\bin\Release\libsndfile-1.dll
+C:\Users\Daniel Tumelo\Documents\0rison\Otter\bin\Release\Otter.XML
+C:\Users\Daniel Tumelo\Documents\0rison\Otter\bin\Release\Otter.dll
+C:\Users\Daniel Tumelo\Documents\0rison\Otter\bin\Release\Otter.pdb
+C:\Users\Daniel Tumelo\Documents\0rison\Otter\bin\Release\sfmlnet-audio-2.dll
+C:\Users\Daniel Tumelo\Documents\0rison\Otter\bin\Release\sfmlnet-graphics-2.dll
+C:\Users\Daniel Tumelo\Documents\0rison\Otter\bin\Release\sfmlnet-system-2.dll
+C:\Users\Daniel Tumelo\Documents\0rison\Otter\bin\Release\sfmlnet-window-2.dll
+C:\Users\Daniel Tumelo\Documents\0rison\Otter\obj\x86\NuGet\Otter.dll
+C:\Users\Daniel Tumelo\Documents\0rison\Otter\obj\x86\NuGet\Otter.pdb
