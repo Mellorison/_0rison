@@ -6,28 +6,28 @@
 - Coming Soon: 1.0.0
 
 # Basic Features
-Quick Set Up,
-6 Collider Types,
-Handy Utility Functions,
-Scene, Entity, Component Based System,
-Texture Atlas Support
-And MORE! :D
+- Quick Set Up,
+- 6 Collider Types,
+- Handy Utility Functions,
+- Scene, Entity, Component Based System,
+- Texture Atlas Support
+- And MORE! :D
 
-Set Up (Visual Studio).
-New Console Application.
-Add Project "0rison.csproj" to Solution.
-Add Reference to "0rison" in your Project.
-Add "using 0rison;" to your Program.cs.
-Create a new game: var game = new Game();
-Start the game: game.Start();
-Run your brand new 0rison game!
+# Set Up (Visual Studio).
+- New Console Application.
+- Add Project "0rison.csproj" to Solution.
+- Add Reference to "0rison" in your Project.
+- Add "using 0rison;" to your Program.cs.
+- Create a new game: var game = new Game();
+- Start the game: game.Start();
+- Run your brand new 0rison game!
 
 # Contribute
-Submit a pull request.
-File an Issue.
-Post on the forum.
+- Submit a pull request.
+- File an Issue.
+- Post on the forum.
 
 # Help
-Created and maintained by Daniel Tumelo (mellorison@gmail.com)
-0rison Forum: http://danieltumelo.teammakkon.com 
+- Created and maintained by Daniel Tumelo (mellorison@gmail.com)
+- 0rison Forum: http://danieltumelo.teammakkon.com 
 
