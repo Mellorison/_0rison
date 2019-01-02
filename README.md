@@ -2,8 +2,8 @@
 0rison is a 2d game development framework developed with .Net. It's primarily meant for PC, Mac, and Linux games.
 
 # Current Version
-Version 0.9.6
-Coming Soon: 1.0.0
+- Version 0.9.6
+- Coming Soon: 1.0.0
 
 # Basic Features
 Quick Set Up,
