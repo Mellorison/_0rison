@@ -29,5 +29,5 @@
 
 # Help
 - Created and maintained by Daniel Tumelo (mellorison@gmail.com)
-- 0rison Forum: http://danieltumelo.teammakkon.com or right here on github: https://github.com/Mellorison/_0rison/issues
+- 0rison Forum: https://discord.gg/S3F5HcP , http://danieltumelo.teammakkon.com or right here on github: https://github.com/Mellorison/_0rison/issues
 
