@@ -1,5 +1,5 @@
 # Orison-Softworks - Daniel Tumelo : 0rison 
-0rison is a 2d game development framework developed with .Net. It's primarily meant for PC games.
+0rison is a 2d graphics simulation development framework developed with .Net. It's primarily meant for PC games.
 
 # Current Version
 - Version 0.9.6
