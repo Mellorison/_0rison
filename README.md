@@ -18,9 +18,9 @@
 - Add Project "0rison.csproj" to Solution.
 - Add Reference to "0rison" in your Project.
 - Add "using 0rison;" to your Program.cs.
-- Create a new game: var game = new Game();
-- Start the game: game.Start();
-- Run your brand new 0rison game!
+- Create a new program: var program = new Program();
+- Start the program: program.Start();
+- Run your brand new 0rison program!
 
 # Contribute
 - Submit a pull request.
