@@ -2,14 +2,13 @@
 0rison is a 2d graphics simulation programming framework developed with .Net. It's primarily meant for Low-Level Computer Graphics research.
 
 # Current Version
-- Version 0.9.6
-- Coming Soon: 1.0.0
+- Version 0.1.1
 
 # Basic Features
 - Quick Set Up,
 - 6 Collider Types,
 - Handy Utility Functions,
-- Scene, Entity, Component Based System,
+- Scene, Entity, Component-Based System,
 - Texture Atlas Support
 - And MORE! :D
 
@@ -29,5 +28,5 @@
 
 # Help
 - Created and maintained by Daniel Tumelo (mellorison@gmail.com)
-- 0rison Forum: https://discord.gg/S3F5HcP , http://danieltumelo.yabuntu.net or right here on github: https://github.com/Mellorison/_0rison/issues
+- 0rison Forum: https://discord.gg/S3F5HcP , http://danieltumelo.yabuntu.net or right here on GitHub: https://github.com/Mellorison/_0rison/issues
 
