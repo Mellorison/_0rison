@@ -1,4 +1,4 @@
-# Orison-Softworks - Daniel Tumelo : 0rison 
+# Orison-Softworks - Tumelo Daniel Mwaba: 0rison 
 0rison is a 2d graphics simulation programming framework developed with .Net. It's primarily meant for Low-Level Computer Graphics research.
 
 # Current Version
