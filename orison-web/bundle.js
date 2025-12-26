@@ -392,6 +392,10 @@
           this.paused = !this.paused;
         }
 
+        if (this.webgl && this.webgl.enabled && this.input.wasPressed('KeyG')) {
+          this.webgl.exportGlb();
+        }
+
         this.renderer.beginFrame();
 
         if (this.fixedTimestep) {
@@ -442,6 +446,9 @@
       const g = this.renderer;
       g.text('Scene: ' + (this.scene ? this.scene.name : 'none'), 12, 10, { color: 'rgba(255,255,255,0.85)', size: 13 });
       g.text('Paused: ' + (this.paused ? 'yes' : 'no'), 12, 28, { color: 'rgba(255,255,255,0.85)', size: 13 });
+      if (this.webgl && this.webgl.enabled) {
+        g.text('3D: ON  (G to download GLB)', 12, 46, { color: 'rgba(255,255,255,0.75)', size: 13 });
+      }
     }
   }
 
@@ -703,6 +710,110 @@
     ];
   }
 
+  function _pad4(n) {
+    return (n + 3) & ~3;
+  }
+
+  function _u32le(v) {
+    const b = new Uint8Array(4);
+    const dv = new DataView(b.buffer);
+    dv.setUint32(0, v, true);
+    return b;
+  }
+
+  function _asciiBytes(str) {
+    const out = new Uint8Array(str.length);
+    for (let i = 0; i < str.length; i++) out[i] = str.charCodeAt(i) & 0xff;
+    return out;
+  }
+
+  function _downloadBytes(bytes, filename, mime) {
+    const blob = new Blob([bytes], { type: mime || 'application/octet-stream' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+  }
+
+  function buildGlbFromMesh(vertexFloats, indexU16) {
+    // vertex layout: [px,py,pz,nx,ny,nz,r,g,b]
+    const vCount = Math.floor(vertexFloats.length / 9);
+    let minX = Infinity, minY = Infinity, minZ = Infinity;
+    let maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity;
+    for (let i = 0; i < vCount; i++) {
+      const x = vertexFloats[i * 9 + 0];
+      const y = vertexFloats[i * 9 + 1];
+      const z = vertexFloats[i * 9 + 2];
+      if (x < minX) minX = x;
+      if (y < minY) minY = y;
+      if (z < minZ) minZ = z;
+      if (x > maxX) maxX = x;
+      if (y > maxY) maxY = y;
+      if (z > maxZ) maxZ = z;
+    }
+
+    const vertexBytes = new Uint8Array(vertexFloats.buffer, vertexFloats.byteOffset, vertexFloats.byteLength);
+    const indexBytes = new Uint8Array(indexU16.buffer, indexU16.byteOffset, indexU16.byteLength);
+    const vByteLen = vertexBytes.byteLength;
+    const iByteOff = _pad4(vByteLen);
+    const iByteLen = indexBytes.byteLength;
+    const binByteLen = _pad4(iByteOff + iByteLen);
+
+    const bin = new Uint8Array(binByteLen);
+    bin.set(vertexBytes, 0);
+    bin.set(indexBytes, iByteOff);
+
+    const gltf = {
+      asset: { version: '2.0', generator: 'orison-web procedural exporter' },
+      scene: 0,
+      scenes: [{ nodes: [0] }],
+      nodes: [{ mesh: 0, name: 'StellateProtagonist' }],
+      meshes: [{ primitives: [{ attributes: { POSITION: 0, NORMAL: 1, COLOR_0: 2 }, indices: 3, material: 0 }] }],
+      materials: [{
+        name: 'AfronautSuit',
+        doubleSided: true,
+        pbrMetallicRoughness: { baseColorFactor: [1, 1, 1, 1], metallicFactor: 0.0, roughnessFactor: 1.0 }
+      }],
+      buffers: [{ byteLength: binByteLen }],
+      bufferViews: [
+        { buffer: 0, byteOffset: 0, byteLength: vByteLen, byteStride: 36, target: 34962 },
+        { buffer: 0, byteOffset: iByteOff, byteLength: iByteLen, target: 34963 }
+      ],
+      accessors: [
+        { bufferView: 0, byteOffset: 0, componentType: 5126, count: vCount, type: 'VEC3', min: [minX, minY, minZ], max: [maxX, maxY, maxZ] },
+        { bufferView: 0, byteOffset: 12, componentType: 5126, count: vCount, type: 'VEC3' },
+        { bufferView: 0, byteOffset: 24, componentType: 5126, count: vCount, type: 'VEC3' },
+        { bufferView: 1, byteOffset: 0, componentType: 5123, count: indexU16.length, type: 'SCALAR' }
+      ]
+    };
+
+    let json = JSON.stringify(gltf);
+    const jsonPad = _pad4(json.length);
+    if (jsonPad !== json.length) json += ' '.repeat(jsonPad - json.length);
+    const jsonBytes = _asciiBytes(json);
+
+    // GLB container
+    const totalLen = 12 + 8 + jsonBytes.length + 8 + bin.length;
+    const out = new Uint8Array(totalLen);
+    let o = 0;
+    out.set(_u32le(0x46546C67), o); o += 4; // 'glTF'
+    out.set(_u32le(2), o); o += 4;
+    out.set(_u32le(totalLen), o); o += 4;
+
+    out.set(_u32le(jsonBytes.length), o); o += 4;
+    out.set(_u32le(0x4E4F534A), o); o += 4; // 'JSON'
+    out.set(jsonBytes, o); o += jsonBytes.length;
+
+    out.set(_u32le(bin.length), o); o += 4;
+    out.set(_u32le(0x004E4942), o); o += 4; // 'BIN\0'
+    out.set(bin, o); o += bin.length;
+    return out;
+  }
+
   function pushBox(verts, inds, opts) {
     const cx = opts.cx || 0;
     const cy = opts.cy || 0;
@@ -919,14 +1030,17 @@
       // Helmet ring
       pushBox(verts, inds, { cx: 0, cy: -8, cz: 0, sx: 16, sy: 2.2, sz: 16, col: [0.75, 0.56, 0.20] });
 
+      this._meshVertexFloats = new Float32Array(verts);
+      this._meshIndexU16 = new Uint16Array(inds);
+
       this.indexCount = inds.length;
       this.vbo = gl.createBuffer();
       gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
-      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(verts), gl.STATIC_DRAW);
+      gl.bufferData(gl.ARRAY_BUFFER, this._meshVertexFloats, gl.STATIC_DRAW);
 
       this.ibo = gl.createBuffer();
       gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.ibo);
-      gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(inds), gl.STATIC_DRAW);
+      gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, this._meshIndexU16, gl.STATIC_DRAW);
 
       const stride = 9 * 4;
       gl.enableVertexAttribArray(this.aPos);
@@ -939,6 +1053,12 @@
       gl.enable(gl.DEPTH_TEST);
       gl.enable(gl.BLEND);
       gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    }
+
+    exportGlb() {
+      if (!this.enabled || !this._meshVertexFloats || !this._meshIndexU16) return;
+      const glb = buildGlbFromMesh(this._meshVertexFloats, this._meshIndexU16);
+      _downloadBytes(glb, 'stellate_protagonist.glb', 'model/gltf-binary');
     }
 
     _resizeToMatch() {
