@@ -532,8 +532,8 @@
       this.h = 36;
 
       this.speed = 3.4;
-      this.jumpVel = -10.0;
-      this.gravity = 0.55;
+      this.jumpVel = -12.5;
+      this.gravity = 0.50;
       this.maxFall = 14.0;
 
       this.onGround = false;
@@ -585,9 +585,7 @@
       const ay = input.axisY();
 
       let moveX = ax;
-      if (this.axisTwist) {
-        moveX = ay;
-      }
+      void ay;
 
       this.vx = moveX * this.speed;
 
@@ -710,6 +708,49 @@
     ];
   }
 
+  function mat4Perspective(fovYRad, aspect, near, far) {
+    const f = 1 / Math.tan(fovYRad * 0.5);
+    const nf = 1 / (near - far);
+    return [
+      f / aspect, 0, 0, 0,
+      0, f, 0, 0,
+      0, 0, (far + near) * nf, -1,
+      0, 0, (2 * far * near) * nf, 0
+    ];
+  }
+
+  function v3Sub(a, b) {
+    return [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+  }
+
+  function v3Cross(a, b) {
+    return [
+      a[1] * b[2] - a[2] * b[1],
+      a[2] * b[0] - a[0] * b[2],
+      a[0] * b[1] - a[1] * b[0]
+    ];
+  }
+
+  function v3Norm(a) {
+    const d = Math.hypot(a[0], a[1], a[2]) || 1;
+    return [a[0] / d, a[1] / d, a[2] / d];
+  }
+
+  function mat4LookAt(eye, target, up) {
+    const z = v3Norm(v3Sub(eye, target));
+    const x = v3Norm(v3Cross(up, z));
+    const y = v3Cross(z, x);
+    return [
+      x[0], y[0], z[0], 0,
+      x[1], y[1], z[1], 0,
+      x[2], y[2], z[2], 0,
+      -(x[0] * eye[0] + x[1] * eye[1] + x[2] * eye[2]),
+      -(y[0] * eye[0] + y[1] * eye[1] + y[2] * eye[2]),
+      -(z[0] * eye[0] + z[1] * eye[1] + z[2] * eye[2]),
+      1
+    ];
+  }
+
   function _pad4(n) {
     return (n + 3) & ~3;
   }
@@ -737,6 +778,69 @@
     a.click();
     a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 2000);
+  }
+
+  function _readUtf8(bytes) {
+    if (typeof TextDecoder !== 'undefined') {
+      return new TextDecoder('utf-8').decode(bytes);
+    }
+    let s = '';
+    for (let i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
+    return s;
+  }
+
+  function _readAccessor(gltf, accessorIndex, binU8) {
+    const acc = gltf.accessors[accessorIndex];
+    const view = gltf.bufferViews[acc.bufferView];
+    const byteOffset = (view.byteOffset || 0) + (acc.byteOffset || 0);
+    const count = acc.count;
+    const type = acc.type;
+    const comp = acc.componentType;
+    const stride = view.byteStride || 0;
+
+    const compsPerElem =
+      type === 'SCALAR' ? 1 :
+        type === 'VEC2' ? 2 :
+          type === 'VEC3' ? 3 :
+            type === 'VEC4' ? 4 : 1;
+
+    // Supported component types: float32, uint16, uint32
+    let bytesPerComp = 4;
+    if (comp === 5123) bytesPerComp = 2;
+    else if (comp === 5125) bytesPerComp = 4;
+    else if (comp === 5126) bytesPerComp = 4;
+
+    const elemSize = compsPerElem * bytesPerComp;
+    const dv = new DataView(binU8.buffer, binU8.byteOffset, binU8.byteLength);
+
+    if (!stride || stride === elemSize) {
+      const start = binU8.byteOffset + byteOffset;
+      const len = count * compsPerElem;
+      if (comp === 5126) {
+        return { kind: 'f32', data: new Float32Array(binU8.buffer, start, len), compsPerElem };
+      }
+      if (comp === 5123) {
+        return { kind: 'u16', data: new Uint16Array(binU8.buffer, start, len), compsPerElem };
+      }
+      if (comp === 5125) {
+        return { kind: 'u32', data: new Uint32Array(binU8.buffer, start, len), compsPerElem };
+      }
+    }
+
+    // Strided (deinterleave)
+    if (comp === 5126) {
+      const out = new Float32Array(count * compsPerElem);
+      for (let i = 0; i < count; i++) {
+        const base = byteOffset + i * stride;
+        for (let c = 0; c < compsPerElem; c++) {
+          out[i * compsPerElem + c] = dv.getFloat32(base + c * 4, true);
+        }
+      }
+      return { kind: 'f32', data: out, compsPerElem };
+    }
+
+    // Fallback: unsupported strided type
+    return null;
   }
 
   function buildGlbFromMesh(vertexFloats, indexU16) {
@@ -934,6 +1038,8 @@
       this._lastW = 0;
       this._lastH = 0;
       this._spin = 0;
+      this._worldKey = '';
+      this._worldIndexCount = 0;
       if (!this.enabled) return;
       this._init();
     }
@@ -1053,6 +1159,208 @@
       gl.enable(gl.DEPTH_TEST);
       gl.enable(gl.BLEND);
       gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+      this._extLoaded = false;
+    }
+
+    loadGlb(arrayBuffer) {
+      if (!this.enabled) return;
+      const gl = this.gl;
+      try {
+        const u8 = new Uint8Array(arrayBuffer);
+        const dv = new DataView(arrayBuffer);
+        const magic = dv.getUint32(0, true);
+        if (magic !== 0x46546C67) throw new Error('Not a GLB (bad magic)');
+        const version = dv.getUint32(4, true);
+        if (version !== 2) throw new Error('Unsupported GLB version: ' + version);
+
+        let off = 12;
+        const jsonLen = dv.getUint32(off, true); off += 4;
+        const jsonType = dv.getUint32(off, true); off += 4;
+        if (jsonType !== 0x4E4F534A) throw new Error('Missing JSON chunk');
+        const jsonStr = _readUtf8(u8.subarray(off, off + jsonLen));
+        off += jsonLen;
+
+        const binLen = dv.getUint32(off, true); off += 4;
+        const binType = dv.getUint32(off, true); off += 4;
+        if (binType !== 0x004E4942) throw new Error('Missing BIN chunk');
+        const bin = u8.subarray(off, off + binLen);
+
+        const gltf = JSON.parse(jsonStr);
+        if (!gltf.meshes || !gltf.meshes.length) throw new Error('No meshes in glb');
+        const mesh = gltf.meshes[0];
+        if (!mesh.primitives || !mesh.primitives.length) throw new Error('No primitives in mesh');
+        const prim = mesh.primitives[0];
+        if (!prim.attributes || prim.attributes.POSITION == null) throw new Error('Primitive has no POSITION');
+
+        const posAcc = _readAccessor(gltf, prim.attributes.POSITION, bin);
+        if (!posAcc || posAcc.kind !== 'f32' || posAcc.compsPerElem !== 3) throw new Error('Unsupported POSITION accessor');
+
+        const norAcc = prim.attributes.NORMAL != null ? _readAccessor(gltf, prim.attributes.NORMAL, bin) : null;
+        const colAcc = prim.attributes.COLOR_0 != null ? _readAccessor(gltf, prim.attributes.COLOR_0, bin) : null;
+        const idxAcc = prim.indices != null ? _readAccessor(gltf, prim.indices, bin) : null;
+
+        const vCount = posAcc.data.length / 3;
+        const outVerts = new Float32Array(vCount * 9);
+        for (let i = 0; i < vCount; i++) {
+          const px = posAcc.data[i * 3 + 0];
+          const py = posAcc.data[i * 3 + 1];
+          const pz = posAcc.data[i * 3 + 2];
+
+          let nx = 0, ny = 0, nz = 1;
+          if (norAcc && norAcc.kind === 'f32' && norAcc.compsPerElem >= 3) {
+            nx = norAcc.data[i * norAcc.compsPerElem + 0];
+            ny = norAcc.data[i * norAcc.compsPerElem + 1];
+            nz = norAcc.data[i * norAcc.compsPerElem + 2];
+          }
+
+          let r = 0.9, g = 0.9, b = 0.95;
+          if (colAcc && colAcc.kind === 'f32') {
+            const c0 = colAcc.data[i * colAcc.compsPerElem + 0];
+            const c1 = colAcc.data[i * colAcc.compsPerElem + 1];
+            const c2 = colAcc.data[i * colAcc.compsPerElem + 2];
+            r = c0; g = c1; b = c2;
+          }
+
+          const o = i * 9;
+          outVerts[o + 0] = px;
+          outVerts[o + 1] = py;
+          outVerts[o + 2] = pz;
+          outVerts[o + 3] = nx;
+          outVerts[o + 4] = ny;
+          outVerts[o + 5] = nz;
+          outVerts[o + 6] = r;
+          outVerts[o + 7] = g;
+          outVerts[o + 8] = b;
+        }
+
+        let outIdx = null;
+        if (idxAcc) {
+          if (idxAcc.kind === 'u16') outIdx = new Uint16Array(idxAcc.data);
+          else if (idxAcc.kind === 'u32') {
+            // If indices exceed 65535, this won't render with UNSIGNED_SHORT. For now, downcast if safe.
+            let max = 0;
+            for (let i = 0; i < idxAcc.data.length; i++) if (idxAcc.data[i] > max) max = idxAcc.data[i];
+            if (max > 65535) throw new Error('Index buffer requires UNSIGNED_INT (not supported in WebGL1 in this demo).');
+            outIdx = new Uint16Array(idxAcc.data.length);
+            for (let i = 0; i < idxAcc.data.length; i++) outIdx[i] = idxAcc.data[i];
+          }
+        } else {
+          outIdx = new Uint16Array(vCount);
+          for (let i = 0; i < vCount; i++) outIdx[i] = i;
+        }
+
+        if (!this._extVbo) this._extVbo = gl.createBuffer();
+        if (!this._extIbo) this._extIbo = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, this._extVbo);
+        gl.bufferData(gl.ARRAY_BUFFER, outVerts, gl.STATIC_DRAW);
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this._extIbo);
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, outIdx, gl.STATIC_DRAW);
+
+        this._extIndexCount = outIdx.length;
+        this._extLoaded = true;
+      } catch (e) {
+        this._extLoaded = false;
+        console.error('GLB load failed:', e);
+      }
+    }
+
+    _buildWorldMesh(scene) {
+      const gl = this.gl;
+      const level = scene.level;
+      if (!level) return;
+
+      const key = level.name + ':' + level.solids.length + ':' + level.hazards.length;
+      if (key === this._worldKey) return;
+      this._worldKey = key;
+
+      const verts = [];
+      const inds = [];
+
+      const depth = 90;
+      const dz = depth * 0.5;
+
+      // Solids
+      for (const s of level.solids) {
+        pushBox(verts, inds, {
+          cx: s.x + s.w * 0.5,
+          cy: s.y + s.h * 0.5,
+          cz: 0,
+          sx: s.w,
+          sy: s.h,
+          sz: depth,
+          col: [0.18, 0.20, 0.26]
+        });
+        // top highlight
+        pushBox(verts, inds, {
+          cx: s.x + s.w * 0.5,
+          cy: s.y + 2,
+          cz: dz - 6,
+          sx: s.w,
+          sy: 4,
+          sz: 12,
+          col: [0.24, 0.28, 0.40]
+        });
+      }
+
+      // Hazards
+      for (const h of level.hazards) {
+        pushBox(verts, inds, {
+          cx: h.x + h.w * 0.5,
+          cy: h.y + h.h * 0.5,
+          cz: 0,
+          sx: h.w,
+          sy: h.h,
+          sz: depth,
+          col: [0.75, 0.18, 0.18]
+        });
+      }
+
+      // Checkpoint
+      pushBox(verts, inds, {
+        cx: level.checkpoint.x + level.checkpoint.w * 0.5,
+        cy: level.checkpoint.y + level.checkpoint.h * 0.5,
+        cz: 0,
+        sx: level.checkpoint.w,
+        sy: level.checkpoint.h,
+        sz: depth,
+        col: [0.20, 0.75, 0.46]
+      });
+
+      // Twist switch
+      pushBox(verts, inds, {
+        cx: level.twistSwitch.x + level.twistSwitch.w * 0.5,
+        cy: level.twistSwitch.y + level.twistSwitch.h * 0.5,
+        cz: 0,
+        sx: level.twistSwitch.w,
+        sy: level.twistSwitch.h,
+        sz: depth,
+        col: [0.50, 0.36, 0.92]
+      });
+
+      // Portal
+      pushBox(verts, inds, {
+        cx: level.portal.x + level.portal.w * 0.5,
+        cy: level.portal.y + level.portal.h * 0.5,
+        cz: 0,
+        sx: level.portal.w,
+        sy: level.portal.h,
+        sz: depth,
+        col: [0.28, 0.66, 0.92]
+      });
+
+      const v = new Float32Array(verts);
+      const i = new Uint16Array(inds);
+
+      if (!this._worldVbo) this._worldVbo = gl.createBuffer();
+      if (!this._worldIbo) this._worldIbo = gl.createBuffer();
+
+      gl.bindBuffer(gl.ARRAY_BUFFER, this._worldVbo);
+      gl.bufferData(gl.ARRAY_BUFFER, v, gl.STATIC_DRAW);
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this._worldIbo);
+      gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, i, gl.STATIC_DRAW);
+
+      this._worldIndexCount = i.length;
     }
 
     exportGlb() {
@@ -1094,6 +1402,88 @@
       const camX = scene.cameraX || 0;
       const camY = scene.cameraY || 0;
       const p = scene.player;
+
+      const threeDTimer = scene._threeDTimer || 0;
+
+      // 3D perspective mode (temporary 5 seconds): render a simple 3D world view for orientation.
+      if (threeDTimer > 0) {
+        if (!this._extLoaded) {
+          this._buildWorldMesh(scene);
+        }
+
+        const aspect = w / Math.max(1, h);
+        const proj = mat4Perspective(55 * Math.PI / 180, aspect, 1, 5000);
+
+        // Camera in world space, y axis points down (up vector is -Y).
+        const eye = [camX + 520, camY - 420, 980];
+        const target = [camX + 120, camY + 40, 0];
+        const up = [0, -1, 0];
+        const view = mat4LookAt(eye, target, up);
+
+        // World draw
+        gl.useProgram(this.prog);
+        gl.uniform3f(this.uLightDir, -0.4, -0.8, 0.9);
+
+        // Bind world geometry
+        if (!this._extLoaded && this._worldVbo && this._worldIbo && this._worldIndexCount > 0) {
+          gl.bindBuffer(gl.ARRAY_BUFFER, this._worldVbo);
+          gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this._worldIbo);
+          const stride = 9 * 4;
+          gl.enableVertexAttribArray(this.aPos);
+          gl.vertexAttribPointer(this.aPos, 3, gl.FLOAT, false, stride, 0);
+          gl.enableVertexAttribArray(this.aNor);
+          gl.vertexAttribPointer(this.aNor, 3, gl.FLOAT, false, stride, 3 * 4);
+          gl.enableVertexAttribArray(this.aCol);
+          gl.vertexAttribPointer(this.aCol, 3, gl.FLOAT, false, stride, 6 * 4);
+
+          const modelWorld = mat4Identity();
+          const mvpWorld = mat4Mul(proj, mat4Mul(view, modelWorld));
+          gl.uniformMatrix4fv(this.uMvp, false, new Float32Array(mvpWorld));
+          gl.uniformMatrix4fv(this.uModel, false, new Float32Array(modelWorld));
+          gl.drawElements(gl.TRIANGLES, this._worldIndexCount, gl.UNSIGNED_SHORT, 0);
+        }
+
+        // Optional external environment mesh (loaded from GLB)
+        if (this._extLoaded && this._extVbo && this._extIbo && this._extIndexCount > 0) {
+          gl.bindBuffer(gl.ARRAY_BUFFER, this._extVbo);
+          gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this._extIbo);
+          const strideE = 9 * 4;
+          gl.enableVertexAttribArray(this.aPos);
+          gl.vertexAttribPointer(this.aPos, 3, gl.FLOAT, false, strideE, 0);
+          gl.enableVertexAttribArray(this.aNor);
+          gl.vertexAttribPointer(this.aNor, 3, gl.FLOAT, false, strideE, 3 * 4);
+          gl.enableVertexAttribArray(this.aCol);
+          gl.vertexAttribPointer(this.aCol, 3, gl.FLOAT, false, strideE, 6 * 4);
+
+          const modelExt = mat4Identity();
+          const mvpExt = mat4Mul(proj, mat4Mul(view, modelExt));
+          gl.uniformMatrix4fv(this.uMvp, false, new Float32Array(mvpExt));
+          gl.uniformMatrix4fv(this.uModel, false, new Float32Array(modelExt));
+          gl.drawElements(gl.TRIANGLES, this._extIndexCount, gl.UNSIGNED_SHORT, 0);
+        }
+
+        // Draw the protagonist model in world space
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.ibo);
+        const stride2 = 9 * 4;
+        gl.enableVertexAttribArray(this.aPos);
+        gl.vertexAttribPointer(this.aPos, 3, gl.FLOAT, false, stride2, 0);
+        gl.enableVertexAttribArray(this.aNor);
+        gl.vertexAttribPointer(this.aNor, 3, gl.FLOAT, false, stride2, 3 * 4);
+        gl.enableVertexAttribArray(this.aCol);
+        gl.vertexAttribPointer(this.aCol, 3, gl.FLOAT, false, stride2, 6 * 4);
+
+        this._spin += 0.02;
+        const modelP = mat4Mul(
+          mat4Translate(p.x, p.y, 0),
+          mat4Mul(mat4RotateY(this._spin), mat4Scale(1.15, 1.15, 1.15))
+        );
+        const mvpP = mat4Mul(proj, mat4Mul(view, modelP));
+        gl.uniformMatrix4fv(this.uMvp, false, new Float32Array(mvpP));
+        gl.uniformMatrix4fv(this.uModel, false, new Float32Array(modelP));
+        gl.drawElements(gl.TRIANGLES, this.indexCount, gl.UNSIGNED_SHORT, 0);
+        return;
+      }
 
       // 2D->screen mapping (matches CanvasRenderer pushCamera)
       const screenX = (p.x - camX) * zoom + (w * 0.5);
@@ -1137,6 +1527,8 @@
 
       this._messageTimer = 0;
       this._message = '';
+
+      this._threeDTimer = 0;
     }
 
     begin(game) {
@@ -1162,6 +1554,11 @@
       if (this._messageTimer > 0) {
         this._messageTimer -= dt;
         if (this._messageTimer <= 0) this._message = '';
+      }
+
+      if (this._threeDTimer > 0) {
+        this._threeDTimer -= dt;
+        if (this._threeDTimer < 0) this._threeDTimer = 0;
       }
 
       this._centerCameraOnPlayer();
@@ -1194,8 +1591,10 @@
       });
 
       if (nearSwitch && input.wasPressed('KeyE')) {
-        this.player.axisTwist = !this.player.axisTwist;
-        this._toast(this.player.axisTwist ? 'Cartesian-Twist engaged (axes swapped)' : 'Cartesian-Twist disengaged', 2);
+        // Cartesian-Twist in this web MVP is a temporary 3D perspective shift (not an axis-swap).
+        this.player.axisTwist = false;
+        this._threeDTimer = 5.0;
+        this._toast('3D perspective enabled (5 seconds)', 2);
       }
 
       const b = this.level.bounds;
@@ -1265,6 +1664,35 @@
       g.text('Cartesian-Twist: ' + twist, 22, 38, { size: 13, color: this.player.axisTwist ? 'rgba(124,92,255,0.95)' : 'rgba(255,255,255,0.70)' });
       g.text('E near switch to toggle', 22, 56, { size: 12, color: 'rgba(255,255,255,0.55)' });
 
+      if (this._threeDTimer > 0) {
+        const s = this._threeDTimer.toFixed(1);
+        g.rect(12, 180, 250, 28, 'rgba(0,0,0,0.35)');
+        g.text('3D View: ' + s + 's', 22, 188, { size: 13, color: 'rgba(255,255,255,0.85)' });
+      }
+
+      {
+        const input = this.game.input;
+        const pRect = this.player.rect;
+        const nearSwitch = aabbIntersects(pRect, {
+          x: this.twistSwitch.x - 16,
+          y: this.twistSwitch.y - 16,
+          w: this.twistSwitch.w + 32,
+          h: this.twistSwitch.h + 32
+        });
+
+        if (nearSwitch) {
+          g.rect(12, 136, 420, 34, 'rgba(0,0,0,0.35)');
+          g.text('Twist switch in range — press E', 22, 145, { size: 13, color: 'rgba(255,255,255,0.92)' });
+          g.text('KeyE detected this frame: ' + (input.wasPressed('KeyE') ? 'YES' : 'no'), 22, 163, { size: 12, color: input.wasPressed('KeyE') ? 'rgba(60,220,140,0.95)' : 'rgba(255,255,255,0.55)' });
+        } else {
+          const dx = Math.round(this.twistSwitch.x - this.player.x);
+          const dy = Math.round(this.twistSwitch.y - this.player.y);
+          g.rect(12, 136, 420, 34, 'rgba(0,0,0,0.35)');
+          g.text('Twist switch direction (dx,dy): ' + dx + ', ' + dy, 22, 145, { size: 13, color: 'rgba(255,255,255,0.72)' });
+          g.text('Look for the small glowing purple square', 22, 163, { size: 12, color: 'rgba(255,255,255,0.55)' });
+        }
+      }
+
       if (this._message) {
         g.rect(12, 92, 420, 34, 'rgba(0,0,0,0.35)');
         g.text(this._message, 22, 101, { size: 13, color: 'rgba(255,255,255,0.85)' });
@@ -1327,6 +1755,20 @@
 
     if (webglCanvas) {
       game.webgl = new WebglOverlay(webglCanvas);
+    }
+
+    const loadBtn = document.getElementById('loadGlb');
+    const glbInput = document.getElementById('glbFile');
+    if (loadBtn && glbInput) {
+      loadBtn.addEventListener('click', () => glbInput.click());
+      glbInput.addEventListener('change', async () => {
+        const f = glbInput.files && glbInput.files[0];
+        if (!f) return;
+        if (!game.webgl || !game.webgl.enabled) return;
+        const buf = await f.arrayBuffer();
+        game.webgl.loadGlb(buf);
+        glbInput.value = '';
+      });
     }
 
     game.replaceScene(new MenuScene());

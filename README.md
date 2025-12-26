@@ -50,3 +50,7 @@ The demo renders a procedural 3D “Afronaut” protagonist in a WebGL overlay c
 ## Export the protagonist as `.glb`
 While the demo is running, press `G` to download `stellate_protagonist.glb`.
 
+## Free asset pipeline (CC0)
+To improve visuals with free/open assets (Quaternius / Poly Haven) and convert them to `.glb` for the demo:
+- See `orison-web/ASSETS.md`
+

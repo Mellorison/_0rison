@@ -10,8 +10,8 @@ export class Player extends Entity {
     this.h = 36;
 
     this.speed = 3.4;
-    this.jumpVel = -10.0;
-    this.gravity = 0.55;
+    this.jumpVel = -12.5;
+    this.gravity = 0.50;
     this.maxFall = 14.0;
 
     this.onGround = false;
@@ -66,9 +66,7 @@ export class Player extends Entity {
     let moveX = ax;
     let moveY = 0;
 
-    if (this.axisTwist) {
-      moveX = ay;
-    }
+    void ay;
 
     this.vx = moveX * this.speed;
 

@@ -11,6 +11,10 @@
     <header class="header">
       <div class="title">Orison Web (Canvas2D) — Demo</div>
       <div class="hint">WASD/Arrow Keys to move • Space to dash • Esc to pause</div>
+      <div class="tools">
+        <button id="loadGlb" class="btn" type="button">Load GLB for 3D View</button>
+        <input id="glbFile" type="file" accept=".glb" hidden />
+      </div>
     </header>
 
     <main class="main">
@@ -25,7 +29,7 @@
     </footer>
   </div>
 
-  <script src="./bundle.js?v=4"></script>
+  <script src="./bundle.js?v=5"></script>
   <!-- If you serve this folder with a local static server, you can use the module entrypoint instead: -->
   <!-- <script type="module" src="./src/demo.js"></script> -->
 </body>

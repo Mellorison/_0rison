@@ -17,6 +17,8 @@ export class PlayScene extends Scene {
 
     this._messageTimer = 0;
     this._message = '';
+
+    this._threeDTimer = 0;
   }
 
   begin(game) {
@@ -44,6 +46,11 @@ export class PlayScene extends Scene {
     if (this._messageTimer > 0) {
       this._messageTimer -= dt;
       if (this._messageTimer <= 0) this._message = '';
+    }
+
+    if (this._threeDTimer > 0) {
+      this._threeDTimer -= dt;
+      if (this._threeDTimer < 0) this._threeDTimer = 0;
     }
 
     this._centerCameraOnPlayer();
@@ -77,8 +84,9 @@ export class PlayScene extends Scene {
     });
 
     if (nearSwitch && input.wasPressed('KeyE')) {
-      this.player.axisTwist = !this.player.axisTwist;
-      this._toast(this.player.axisTwist ? 'Cartesian-Twist engaged (axes swapped)' : 'Cartesian-Twist disengaged', 2.0);
+      this.player.axisTwist = false;
+      this._threeDTimer = 5.0;
+      this._toast('3D perspective enabled (5 seconds)', 2.0);
     }
 
     const b = this.level.bounds;
@@ -148,6 +156,12 @@ export class PlayScene extends Scene {
     const twist = this.player.axisTwist ? 'ON' : 'OFF';
     g.text(`Cartesian-Twist: ${twist}`, 22, 38, { size: 13, color: this.player.axisTwist ? 'rgba(124,92,255,0.95)' : 'rgba(255,255,255,0.70)' });
     g.text('E near switch to toggle', 22, 56, { size: 12, color: 'rgba(255,255,255,0.55)' });
+
+    if (this._threeDTimer > 0) {
+      const s = this._threeDTimer.toFixed(1);
+      g.rect(12, 180, 250, 28, 'rgba(0,0,0,0.35)');
+      g.text(`3D View: ${s}s`, 22, 188, { size: 13, color: 'rgba(255,255,255,0.85)' });
+    }
 
     if (this._message) {
       g.rect(12, 92, 420, 34, 'rgba(0,0,0,0.35)');
