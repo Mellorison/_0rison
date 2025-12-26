@@ -1,0 +1,64 @@
+:root {
+  color-scheme: dark;
+  --bg: #0b1020;
+  --panel: rgba(255,255,255,0.06);
+  --text: rgba(255,255,255,0.92);
+  --muted: rgba(255,255,255,0.65);
+  --stroke: rgba(255,255,255,0.10);
+}
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: radial-gradient(1200px 600px at 20% 10%, #15224a, var(--bg));
+  color: var(--text);
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+}
+
+.app {
+  height: 100%;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+}
+
+.header {
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--stroke);
+  background: var(--panel);
+  backdrop-filter: blur(10px);
+}
+
+.title {
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+.hint {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.main {
+  display: grid;
+  place-items: center;
+  padding: 22px;
+}
+
+canvas {
+  width: min(1100px, 95vw);
+  height: auto;
+  border-radius: 14px;
+  border: 1px solid var(--stroke);
+  background: rgba(0,0,0,0.35);
+  box-shadow: 0 30px 90px rgba(0,0,0,0.45);
+}
+
+.footer {
+  padding: 12px 18px;
+  border-top: 1px solid var(--stroke);
+  color: var(--muted);
+  font-size: 12px;
+  background: var(--panel);
+  backdrop-filter: blur(10px);
+}

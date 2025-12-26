@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>_0rison Documentation</title>
+  <style>
+    body { font-family: Calibri, Arial, sans-serif; line-height: 1.35; margin: 1in; }
+    h1,h2,h3 { margin: 0.2in 0 0.1in 0; }
+    code { font-family: Consolas, "Courier New", monospace; }
+  </style>
+</head>
+<body>
+  <h1>_0rison Documentation</h1>
+
+  <h2>Overview</h2>
+  <p><code>0rison</code> is a 2D graphics / game development framework built with C# and SFML.Net.</p>
+  <p>
+    Solution: <code>0rison.sln</code><br/>
+    Project: <code>0rison.csproj</code><br/>
+    Output: Class Library (<code>0rison.dll</code>)<br/>
+    Target: <code>.NET Framework 4.5</code><br/>
+    Platform: <code>x86</code><br/>
+    Root namespace: <code>_0rison</code>
+  </p>
+
+  <h2>Dependencies</h2>
+  <h3>Managed</h3>
+  <p>
+    <code>sfmlnet-graphics-2.dll</code><br/>
+    <code>sfmlnet-window-2.dll</code><br/>
+    <code>sfmlnet-system-2.dll</code><br/>
+    <code>sfmlnet-audio-2.dll</code>
+  </p>
+
+  <h3>Native runtime libraries</h3>
+  <p>Copied to output directory:</p>
+  <p>
+    <code>csfml-audio-2.dll</code><br/>
+    <code>csfml-graphics-2.dll</code><br/>
+    <code>csfml-window-2.dll</code><br/>
+    <code>csfml-system-2.dll</code><br/>
+    <code>csfml-network-2.dll</code><br/>
+    <code>openal32.dll</code><br/>
+    <code>libsndfile-1.dll</code>
+  </p>
+  <p>macOS dylibs exist under <code>libosx/</code>.</p>
+
+  <h2>Project structure</h2>
+  <p>
+    <b>Core/</b> — runtime types (Game/Scene/Entity/Input/etc.)<br/>
+    <b>Graphics/</b> — rendering primitives and assets; Drawables for drawable types<br/>
+    <b>Colliders/</b> — collision shapes/logic<br/>
+    <b>Components/</b> — component-based behaviors attached to entities<br/>
+    <b>Utility/</b> — helpers; includes Glide (tweening) and MonoGame (math types)
+  </p>
+
+  <h2>Game loop documentation</h2>
+
+  <h3>Start(Scene firstScene)</h3>
+  <p>Sets <code>FirstScene</code> and calls <code>Start()</code>.</p>
+
+  <h3>Start()</h3>
+  <p>Starts the main loop; after calling <code>Start()</code> the entry-point thread is effectively consumed by the loop.</p>
+  <p>
+    - If the window is not configured, calls <code>SetWindow(Width, Height, WindowFullscreen)</code>.<br/>
+    - Sets <code>Active = true</code>, runs initialization (<code>Init()</code>), updates scenes once (<code>UpdateScenes()</code>), starts a stopwatch, and enters <code>while (Window.IsOpen)</code>.<br/>
+    - Dispatches events via <code>Window.DispatchEvents()</code>.<br/>
+    - Calculates <code>frameTime = 1000f / TargetFramerate</code> and caps large deltas using <code>skipTime = frameTime * 2</code>.<br/>
+    - Supports screenshot capture, quit handling (QuitButton / Alt+F4), and focus-based update behavior.<br/>
+    - Supports mouse locking (<code>LockMouse</code>, <code>LockMouseCenter</code>).<br/>
+    - Runs either a fixed timestep update loop or a variable timestep update.
+  </p>
+
+  <h3>Sleep(int milliseconds)</h3>
+  <p>Sets an internal <code>sleepTime</code> that is consumed by the fixed timestep loop to delay updates. Intended to work with fixed framerate.</p>
+
+  <h2>Scene and Entity</h2>
+  <p>
+    <b>Scene</b>: Manages entities, ordering/layering, pause groups, camera behavior, and provides lifecycle callbacks. Includes a scene-level <code>Tweener</code>.<br/>
+    <b>Entity</b>: Core game object. Has position fields and composition via lists: Graphics, Components, Colliders, Surfaces. Provides callbacks and an entity-level <code>Tweener</code>.
+  </p>
+
+  <h2>Typical usage (README)</h2>
+  <p>
+    Create a new Console App, add/reference <code>0rison.csproj</code>, then call <code>program.Start()</code>.
+  </p>
+
+  <p><i>Note: If your build complains about missing source files referenced in <code>0rison.csproj</code>, verify that all referenced files exist in your working tree.</i></p>
+</body>
+</html>
