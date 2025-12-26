@@ -55,8 +55,6 @@ export class Game {
 
       deltaMs = clamp(deltaMs, 0, 100);
 
-      this.input.beginFrame();
-
       if (this.input.wasPressed('Escape')) {
         this.paused = !this.paused;
       }
@@ -94,6 +92,9 @@ export class Game {
       this._renderOverlay();
 
       this.renderer.endFrame();
+
+      // Clear edge-trigger input AFTER the frame has consumed it.
+      this.input.beginFrame();
       requestAnimationFrame(tick);
     };
 

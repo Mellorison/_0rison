@@ -45,6 +45,30 @@ html, body {
   padding: 22px;
 }
 
+.canvas-stack {
+  position: relative;
+  display: inline-block;
+  width: min(1100px, 95vw);
+}
+
+.canvas-stack canvas {
+  width: 100%;
+  height: auto;
+}
+
+/* Keep the base game canvas in normal flow; overlay webgl on top. */
+#game {
+  position: relative;
+  z-index: 1;
+}
+
+#webgl {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+}
+
+/* Base canvas visual treatment. */
 canvas {
   width: min(1100px, 95vw);
   height: auto;
@@ -52,6 +76,11 @@ canvas {
   border: 1px solid var(--stroke);
   background: rgba(0,0,0,0.35);
   box-shadow: 0 30px 90px rgba(0,0,0,0.45);
+}
+
+/* 3D overlay canvas: allow mouse/touch/keyboard to pass through to the app. */
+#webgl {
+  pointer-events: none;
 }
 
 .footer {

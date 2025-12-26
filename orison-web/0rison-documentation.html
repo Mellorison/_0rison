@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>_0rison Documentation</title>
+  <style>
+    :root { color-scheme: light; }
+    body { font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.5; margin: 32px; max-width: 1000px; }
+    h1,h2,h3 { line-height: 1.2; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; background: #f6f8fa; padding: 2px 4px; border-radius: 4px; }
+    pre { background: #f6f8fa; padding: 12px; border-radius: 8px; overflow: auto; }
+    .muted { color: #555; }
+    hr { border: none; border-top: 1px solid #ddd; margin: 24px 0; }
+    ul { margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <h1>_0rison Documentation</h1>
+  <p class="muted">Generated from repository structure and core source inspection.</p>
+
+  <h2>Overview</h2>
+  <p><code>0rison</code> is a 2D graphics / game development framework built with C# and SFML.Net.</p>
+  <ul>
+    <li><b>Solution</b>: <code>0rison.sln</code></li>
+    <li><b>Project</b>: <code>0rison.csproj</code></li>
+    <li><b>Output</b>: Class Library (<code>0rison.dll</code>)</li>
+    <li><b>Target</b>: <code>.NET Framework 4.5</code></li>
+    <li><b>Platform</b>: <code>x86</code></li>
+    <li><b>Root namespace</b>: <code>_0rison</code></li>
+  </ul>
+
+  <h2>Dependencies</h2>
+  <h3>Managed</h3>
+  <ul>
+    <li><code>sfmlnet-graphics-2.dll</code></li>
+    <li><code>sfmlnet-window-2.dll</code></li>
+    <li><code>sfmlnet-system-2.dll</code></li>
+    <li><code>sfmlnet-audio-2.dll</code></li>
+  </ul>
+
+  <h3>Native runtime libraries</h3>
+  <p>Copied to output directory:</p>
+  <ul>
+    <li><code>csfml-audio-2.dll</code></li>
+    <li><code>csfml-graphics-2.dll</code></li>
+    <li><code>csfml-window-2.dll</code></li>
+    <li><code>csfml-system-2.dll</code></li>
+    <li><code>csfml-network-2.dll</code></li>
+    <li><code>openal32.dll</code></li>
+    <li><code>libsndfile-1.dll</code></li>
+  </ul>
+  <p>macOS dylibs exist under <code>libosx/</code>.</p>
+
+  <h2>Project structure</h2>
+  <ul>
+    <li><code>Core/</code> — runtime types (Game/Scene/Entity/Input/etc.)</li>
+    <li><code>Graphics/</code> — rendering primitives and assets; <code>Graphics/Drawables/</code> for drawable types</li>
+    <li><code>Colliders/</code> — collision shapes/logic</li>
+    <li><code>Components/</code> — component-based behaviors attached to entities</li>
+    <li><code>Utility/</code> — helpers; includes <code>Glide/</code> (tweening) and <code>MonoGame/</code> (math types)</li>
+  </ul>
+
+  <h2>Core architecture and conventions</h2>
+
+  <h3>Game</h3>
+  <p><code>_0rison.Game</code> owns the SFML window/view and runs the game loop via <code>Start()</code>. It tracks timing, input, and manages the scene stack.</p>
+
+  <h3><code>Start(Scene firstScene)</code></h3>
+  <ul>
+    <li>Sets <code>FirstScene</code></li>
+    <li>Calls <code>Start()</code></li>
+  </ul>
+
+  <h3><code>Start()</code></h3>
+  <p>Starts the main loop; after calling <code>Start()</code> the entry-point thread is effectively consumed by the loop.</p>
+  <ul>
+    <li>If window is not configured, calls <code>SetWindow(Width, Height, WindowFullscreen)</code></li>
+    <li>Sets <code>Active = true</code>, calls <code>Init()</code> and <code>UpdateScenes()</code>, then enters <code>while (Window.IsOpen)</code></li>
+    <li>Processes events: <code>Window.DispatchEvents()</code></li>
+    <li>Computes frame timing: <code>frameTime = 1000f / TargetFramerate</code>, <code>skipTime = frameTime * 2</code></li>
+    <li>Handles screenshot, quit button, Alt+F4, and focus/update rules</li>
+    <li>Optional mouse locking (<code>LockMouse</code> / <code>LockMouseCenter</code>)</li>
+    <li>Fixed timestep vs variable timestep update</li>
+  </ul>
+
+  <h4>Fixed timestep</h4>
+  <ul>
+    <li><code>DeltaTime</code> is either 1 (frame units) or 1/TargetFramerate</li>
+    <li>Updates run while <code>deltaTime &gt;= frameTime + sleepTime</code></li>
+    <li>If not paused, calls <code>Update()</code> and then <code>OnUpdate()</code></li>
+    <li>Resets <code>sleepTime</code> to 0 after consuming it</li>
+  </ul>
+
+  <h4>Variable timestep</h4>
+  <ul>
+    <li><code>DeltaTime = deltaTime * 0.001f</code> (seconds)</li>
+    <li>If not paused, calls <code>Update()</code> and then <code>OnUpdate()</code></li>
+  </ul>
+
+  <h3><code>Sleep(int milliseconds)</code></h3>
+  <p>Sets an internal <code>sleepTime</code> used by the fixed timestep update loop, effectively delaying the next update. Intended to work with fixed framerate.</p>
+
+  <h3>Scene</h3>
+  <p><code>_0rison.Scene</code> manages entities, ordering/layering, pause groups, and camera behavior. It provides lifecycle callbacks (OnBegin/OnUpdate/OnRender/etc.) and a scene-level <code>Tweener</code>.</p>
+
+  <h3>Entity</h3>
+  <p><code>_0rison.Entity</code> is the core game object with position fields and composition via lists: Graphics, Components, Colliders, Surfaces. It provides callbacks (OnAdded/OnUpdate/OnRender/etc.) and an entity-level <code>Tweener</code>.</p>
+
+  <h2>Typical usage (README)</h2>
+  <ul>
+    <li>Create a new Console App</li>
+    <li>Add <code>0rison.csproj</code> to your solution and reference it</li>
+    <li>Call <code>program.Start()</code></li>
+  </ul>
+
+  <hr />
+  <p class="muted">Note: If your build complains about missing source files referenced in <code>0rison.csproj</code>, verify that all referenced files exist in your working tree.</p>
+</body>
+</html>

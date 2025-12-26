@@ -14,7 +14,10 @@
     </header>
 
     <main class="main">
-      <canvas id="game" width="960" height="540"></canvas>
+      <div class="canvas-stack">
+        <canvas id="game" width="960" height="540"></canvas>
+        <canvas id="webgl" width="960" height="540"></canvas>
+      </div>
     </main>
 
     <footer class="footer">
@@ -22,6 +25,8 @@
     </footer>
   </div>
 
-  <script type="module" src="./src/demo.js"></script>
+  <script src="./bundle.js?v=4"></script>
+  <!-- If you serve this folder with a local static server, you can use the module entrypoint instead: -->
+  <!-- <script type="module" src="./src/demo.js"></script> -->
 </body>
 </html>
