@@ -1,0 +1,16 @@
+# Blender v3.6.0 OBJ File: 'AllModules_Unreal.blend'
+# www.blender.org
+mtllib Decal_Line_Straight.mtl
+o Decal_Line_Straight_Plane.094
+v -0.072000 0.000000 2.000000
+v 0.072000 0.000000 2.000000
+v -0.072000 0.000000 -2.000000
+v 0.072000 0.000000 -2.000000
+vt 0.472368 0.070454
+vt 0.503586 0.070454
+vt 0.503586 0.937629
+vt 0.472368 0.937629
+vn 0.0000 1.0000 0.0000
+usemtl MI_Decal_Line
+s off
+f 1/1/1 2/2/1 4/3/1 3/4/1

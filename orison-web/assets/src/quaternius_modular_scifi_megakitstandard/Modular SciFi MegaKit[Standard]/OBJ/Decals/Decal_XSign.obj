@@ -1,0 +1,16 @@
+# Blender v3.6.0 OBJ File: 'AllModules_Unreal.blend'
+# www.blender.org
+mtllib Decal_XSign.mtl
+o Decal_XSign_Plane.044
+v 0.180747 0.000000 0.171190
+v -0.180747 0.000000 0.171190
+v 0.180743 0.000000 -0.171190
+v -0.180743 0.000000 -0.171190
+vt 0.902911 0.297689
+vt 0.836002 0.297689
+vt 0.836001 0.234317
+vt 0.902912 0.234317
+vn 0.0000 1.0000 0.0000
+usemtl M_Decal_White
+s off
+f 3/1/1 4/2/1 2/3/1 1/4/1

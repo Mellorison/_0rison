@@ -1,0 +1,16 @@
+# Blender v3.6.0 OBJ File: 'AllModules_Unreal.blend'
+# www.blender.org
+mtllib Decal_Z.mtl
+o Decal_Z_Plane.015
+v 0.359035 0.000000 -0.606823
+v 0.359035 0.000000 0.606824
+v -0.359035 0.000000 -0.606823
+v -0.359035 0.000000 0.606824
+vt 0.591562 0.899985
+vt 0.591562 0.821501
+vt 0.637998 0.821501
+vt 0.637998 0.899985
+vn 0.0000 1.0000 0.0000
+usemtl M_Decal_White
+s off
+f 3/1/1 4/2/1 2/3/1 1/4/1

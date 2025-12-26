@@ -1,0 +1,16 @@
+# Blender v3.6.0 OBJ File: 'AllModules_Unreal.blend'
+# www.blender.org
+mtllib ShortWall_Simple2_Straight.mtl
+o ShortWall_Simple2_Straight_Plane.246
+v -1.999999 0.000000 2.000000
+v -2.000000 -0.000000 -2.000000
+v -1.999999 1.000000 2.000000
+v -2.000000 1.000000 -2.000000
+vt 0.010589 0.998824
+vt -0.000000 0.750152
+vt 1.000000 0.750152
+vt 1.010589 0.998824
+vn 1.0000 0.0000 -0.0000
+usemtl MI_Trim_02
+s 1
+f 3/1/1 1/2/1 2/3/1 4/4/1

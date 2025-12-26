@@ -1,0 +1,16 @@
+# Blender v3.6.0 OBJ File: 'AllModules_Unreal.blend'
+# www.blender.org
+mtllib Decal_K.mtl
+o Decal_K_Plane.019
+v -0.452313 0.000000 -0.606823
+v -0.452313 0.000000 0.606824
+v 0.452313 0.000000 -0.606823
+v 0.452313 0.000000 0.606824
+vt 0.693998 0.899985
+vt 0.693998 0.821501
+vt 0.752499 0.821501
+vt 0.752498 0.899985
+vn 0.0000 1.0000 0.0000
+usemtl M_Decal_White
+s off
+f 1/1/1 2/2/1 4/3/1 3/4/1
