@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Orison Web - 2D/3D Game Engine</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0a0a0e;
+      color: #ffffff;
+      overflow: hidden;
+    }
+    
+    #app {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    header {
+      padding: 1rem 2rem;
+      background: rgba(20, 20, 30, 0.9);
+      border-bottom: 1px solid #333;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .title {
+      font-size: 1.5rem;
+      font-weight: bold;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    
+    .hint {
+      font-size: 0.9rem;
+      color: #888;
+    }
+    
+    main {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #1a1a2e;
+    }
+    
+    #game {
+      border: 2px solid #333;
+      border-radius: 8px;
+      box-shadow: 0 0 30px rgba(102, 126, 234, 0.2);
+      max-width: 100%;
+      max-height: 100%;
+    }
+    
+    #game:focus {
+      outline: 3px solid #667eea;
+      outline-offset: 2px;
+    }
+    
+    #fullscreen-btn {
+      position: fixed;
+      top: 80px;
+      right: 20px;
+      padding: 10px 20px;
+      background: rgba(102, 126, 234, 0.8);
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+      z-index: 1000;
+      transition: background 0.3s;
+    }
+    
+    #fullscreen-btn:hover {
+      background: rgba(102, 126, 234, 1);
+    }
+    
+    .fullscreen {
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      border: none !important;
+      border-radius: 0 !important;
+      z-index: 999;
+    }
+    
+    @media (max-width: 768px) {
+      header {
+        padding: 0.5rem 1rem;
+      }
+      
+      .title {
+        font-size: 1.2rem;
+      }
+      
+      .hint {
+        font-size: 0.75rem;
+      }
+      
+      #game {
+        width: 100% !important;
+        height: auto !important;
+        aspect-ratio: 16/9;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      header {
+        flex-direction: column;
+        gap: 0.5rem;
+        text-align: center;
+      }
+      
+      .title {
+        font-size: 1rem;
+      }
+      
+      .hint {
+        font-size: 0.7rem;
+      }
+    }
+  </style>
+  <script type="module" crossorigin src="/_0rison/assets/index-cDJ6Ohmv.js"></script>
+</head>
+<body>
+  <div id="app">
+    <header>
+      <div class="title">Orison Web - 3D Demo</div>
+      <div class="hint">WASD/Arrow Keys to move</div>
+    </header>
+    <main>
+      <canvas id="game" width="960" height="540"></canvas>
+    </main>
+    <button id="fullscreen-btn">Fullscreen</button>
+  </div>
+  <script>
+    // Fullscreen toggle
+    const fullscreenBtn = document.getElementById('fullscreen-btn');
+    const canvas = document.getElementById('game');
+    
+    fullscreenBtn.addEventListener('click', () => {
+      if (canvas.classList.contains('fullscreen')) {
+        canvas.classList.remove('fullscreen');
+        fullscreenBtn.textContent = 'Fullscreen';
+      } else {
+        canvas.classList.add('fullscreen');
+        fullscreenBtn.textContent = 'Exit Fullscreen';
+      }
+    });
+  </script>
+</body>
+</html>
