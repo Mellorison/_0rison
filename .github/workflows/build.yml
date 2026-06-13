@@ -1,0 +1,31 @@
+name: Build
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+    
+    - name: Restore dependencies
+      run: dotnet restore src/Orison/Orison.csproj
+    
+    - name: Build
+      run: dotnet build src/Orison/Orison.csproj --configuration Release --no-restore
+    
+    - name: Test
+      run: dotnet test tests/Orison.Tests/Orison.Tests.csproj --configuration Release --no-build --verbosity normal
+    
+    - name: Format Check
+      run: dotnet format --verify-no-changes src/Orison/Orison.csproj

@@ -1,34 +1,84 @@
-# Orison-Softworks - Tumelo Daniel Mwaba: 0rison 
-0rison is a 2d graphics simulation programming framework developed with .Net. It's primarily meant for Low-Level Computer Graphics research.
+# Orison
 
-# Current Version
-- Version 0.1.1
+Orison is a 2D graphics simulation programming framework developed with .NET. It's primarily meant for low-level computer graphics research.
 
-# Basic Features
-- Quick Set Up,
-- 6 Collider Types,
-- Handy Utility Functions,
-- Scene, Entity, Component-Based System,
+## Current Version
+- Version 0.2.0 (Modernization in progress)
+
+## Basic Features
+- Quick Set Up
+- 6 Collider Types
+- Handy Utility Functions
+- Scene, Entity, Component-Based System
 - Texture Atlas Support
 - And MORE! :D
 
-# Set Up (Visual Studio).
-- New Console Application.
-- Add Project "0rison.csproj" to Solution.
-- Add Reference to "0rison" in your Project.
-- Add "using 0rison;" to your Program.cs.
-- Create a new program: var program = new Program();
-- Start the program: program.Start();
-- Run your brand new 0rison program!
+## Set Up (Visual Studio)
+- New Console Application
+- Add Project "Orison.csproj" to Solution
+- Add Reference to "Orison" in your Project
+- Add `using Orison;` to your Program.cs
+- Create a new program: `var program = new Program();`
+- Start the program: `program.Start();`
+- Run your brand new Orison program!
 
-# Contribute
-- Submit a pull request.
-- File an Issue.
-- Post on the forum.
+## Set Up (.NET CLI)
+```bash
+dotnet add reference path/to/Orison.csproj
+```
 
-# Help
+## Project Structure
+```
+/
+├── src/
+│   └── Orison/
+│       ├── Core/
+│       ├── Components/
+│       ├── Colliders/
+│       ├── Graphics/
+│       └── Utility/
+├── samples/
+│   └── orison-web/
+├── tests/
+│   └── Orison.Tests/
+├── docs/
+├── assets/
+│   ├── logos/
+│   ├── sprites/
+│   ├── fonts/
+│   └── native/
+├── README.md
+├── LICENSE
+├── CONTRIBUTING.md
+└── CHANGELOG.md
+```
+
+## Dependencies
+
+| Dependency | Purpose | Required For |
+|---|---|---|
+| SFML.NET | Graphics, audio, input, windowing | Desktop runtime |
+| CSFML | Native SFML bindings | Desktop runtime |
+| WebGL | Browser rendering | Web demo |
+
+## Supported Platforms
+- Windows x86/x64
+- macOS
+- Linux
+- Browser (WebGL demo)
+
+## Contribute
+- Submit a pull request (see [CONTRIBUTING.md](CONTRIBUTING.md))
+- File an Issue
+- Post on the forum
+
+## Help
 - Created and maintained by Daniel Tumelo (mellorison@gmail.com)
-- 0rison Forum: https://discord.gg/S3F5HcP , http://danieltumelo.yabuntu.net or right here on GitHub: https://github.com/Mellorison/_0rison/issues
+- Orison Forum: https://discord.gg/S3F5HcP, http://danieltumelo.yabuntu.net or right here on GitHub: https://github.com/Mellorison/_0rison/issues
+- Documentation: See [docs/](docs/) folder
+
+## License
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 # orison-web (Stellate Web Demo)
 This repo also includes a zero-install browser build of a Stellate MVP demo under `orison-web/`.

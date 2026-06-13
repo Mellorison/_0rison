@@ -1,0 +1,52 @@
+root = true
+
+[*.cs]
+indent_style = space
+indent_size = 4
+end_of_line = crlf
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+# Code style rules
+dotnet_sort_system_directives_first = true
+dotnet_style_qualification_for_field = false:suggestion
+dotnet_style_qualification_for_property = false:suggestion
+dotnet_style_qualification_for_method = false:suggestion
+dotnet_style_qualification_for_event = false:suggestion
+
+# Naming conventions
+dotnet_naming_rule.interface_should_be_begins_with_i.severity = warning
+dotnet_naming_rule.interface_should_be_begins_with_i.symbols = interface
+dotnet_naming_rule.interface_should_be_begins_with_i.style = begins_with_i
+
+dotnet_naming_rule.types_should_be_pascal_case.severity = warning
+dotnet_naming_rule.types_should_be_pascal_case.symbols = types
+dotnet_naming_rule.types_should_be_pascal_case.style = pascal_case
+
+dotnet_naming_rule.constants_should_be_pascal_case.severity = warning
+dotnet_naming_rule.constants_should_be_pascal_case.symbols = constants
+dotnet_naming_rule.constants_should_be_pascal_case.style = pascal_case
+
+[symbols.interface]
+applicable_kinds = interface
+applicable_accessibilities = public, internal, private, protected, protected_internal, private_protected
+
+[symbols.types]
+applicable_kinds = class, struct, interface, enum
+applicable_accessibilities = public, internal, private, protected, protected_internal, private_protected
+
+[symbols.constants]
+applicable_kinds = field
+applicable_accessibilities = *
+required_modifiers = const
+
+[style.begins_with_i]
+capitalization = pascal_case
+required_prefix = I
+
+[style.pascal_case]
+capitalization = pascal_case
+
+# XML Documentation
+dotnet_style_require_null_checks_for_reference_types = true:suggestion

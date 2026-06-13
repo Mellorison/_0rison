@@ -1,0 +1,37 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: windows-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+    
+    - name: Restore dependencies
+      run: dotnet restore src/Orison/Orison.csproj
+    
+    - name: Build
+      run: dotnet build src/Orison/Orison.csproj --configuration Release --no-restore
+    
+    - name: Pack
+      run: dotnet pack src/Orison/Orison.csproj --configuration Release --no-build --output nupkg
+    
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: nupkg/*.nupkg
+        draft: false
+        prerelease: false
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
