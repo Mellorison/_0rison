@@ -29,6 +29,7 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
+          cache-dependency-path: './samples/orison-web/package-lock.json'
 
       - name: Install dependencies
         working-directory: ./samples/orison-web
