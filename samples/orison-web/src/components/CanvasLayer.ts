@@ -46,10 +46,14 @@ export class CanvasLayer extends Component {
   }
 
   override added(): void {
-    this.createCanvas();
+    // Delay canvas creation to ensure DOM is ready
+    setTimeout(() => this.createCanvas(), 0);
   }
 
   private createCanvas(): void {
+    // Check if already created
+    if (this.canvas) return;
+
     // Create canvas element
     this.canvas = document.createElement('canvas');
     this.canvas.width = this.width;
@@ -76,7 +80,16 @@ export class CanvasLayer extends Component {
       gameCanvas.parentElement.appendChild(this.canvas);
       console.log('Canvas appended to game container');
     } else {
-      console.error('Game canvas or parent not found');
+      console.error('Game canvas or parent not found, retrying...');
+      // Retry after a delay
+      setTimeout(() => {
+        const retryCanvas = document.querySelector('#game') as HTMLCanvasElement;
+        if (retryCanvas && retryCanvas.parentElement) {
+          retryCanvas.parentElement.style.position = 'relative';
+          retryCanvas.parentElement.appendChild(this.canvas!);
+          console.log('Canvas appended to game container on retry');
+        }
+      }, 100);
     }
   }
 

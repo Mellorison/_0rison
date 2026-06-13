@@ -11,5 +11,5 @@ export default defineConfig({
     sourcemap: true,
   },
   publicDir: 'public',
-  base: '/orison-web/',
+  base: process.env.NODE_ENV === 'production' ? '/_0rison/' : '/',
 });

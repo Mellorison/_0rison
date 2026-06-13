@@ -11,10 +11,7 @@ import { ParticleSystem, ParticleOptions } from './components/ParticleSystem';
 import { Collider3D } from './components/Collider3D';
 import * as THREE from 'three';
 
-import { LevelManager } from './game/LevelManager';
-import { StartMenu } from './game/StartMenu';
-import { PauseMenu } from './game/PauseMenu';
-import { WinScreen } from './game/WinScreen';
+import { GameStateManager } from './game/GameStateManager';
 
 // Simple Vector3 helper for distance calculation
 class VectorHelper {
@@ -89,133 +86,19 @@ async function init(): Promise<void> {
 
   inputManager.setupEventListeners();
 
-  // Game state management
-  let gameState: 'menu' | 'playing' | 'paused' | 'win' = 'menu';
-  let currentScene: Scene | null = null;
-
-  // Start with menu
-  const startMenu = new StartMenu(inputManager, () => {
-    // Play button pressed
-    gameState = 'playing';
-    const levelManager = new LevelManager(game, inputManager, () => {
-      // Game complete
-      gameState = 'win';
-      const winScreen = new WinScreen(
-        inputManager,
-        () => {
-          // Replay
-          gameState = 'playing';
-          const newLevelManager = new LevelManager(game, inputManager, () => {
-            gameState = 'win';
-            const newWinScreen = new WinScreen(inputManager, () => {
-              gameState = 'playing';
-              const replayLevelManager = new LevelManager(game, inputManager, () => {
-                gameState = 'win';
-                const replayWinScreen = new WinScreen(inputManager, () => {
-                  gameState = 'playing';
-                  const finalLevelManager = new LevelManager(game, inputManager, () => {
-                    gameState = 'win';
-                    const finalWinScreen = new WinScreen(inputManager, () => {}, () => {
-                      gameState = 'menu';
-                      game.setScene(startMenu);
-                    });
-                    game.setScene(finalWinScreen);
-                  });
-                  finalLevelManager.start();
-                }, () => {
-                  gameState = 'menu';
-                  game.setScene(startMenu);
-                });
-                game.setScene(replayWinScreen);
-              });
-              replayLevelManager.start();
-            }, () => {
-              gameState = 'menu';
-              game.setScene(startMenu);
-            });
-            game.setScene(newWinScreen);
-          });
-          newLevelManager.start();
-        },
-        () => {
-          // Menu
-          gameState = 'menu';
-          game.setScene(startMenu);
-        }
-      );
-      game.setScene(winScreen);
-    });
-    levelManager.start();
-  }, () => {
-    // Quit button pressed
-    console.log('Quit requested');
-  });
-
-  game.setScene(startMenu);
-  currentScene = startMenu;
+  // Game state management using clean state machine
+  const gameStateManager = new GameStateManager(game, inputManager);
 
   await game.start();
 
-  // Pause menu creation
-  const createPauseMenu = () => {
-    return new PauseMenu(
-      inputManager,
-      () => {
-        // Resume
-        gameState = 'playing';
-        game.setScene(currentScene!);
-      },
-      () => {
-        // Restart
-        gameState = 'playing';
-        const levelManager = new LevelManager(game, inputManager, () => {
-          gameState = 'win';
-          const winScreen = new WinScreen(inputManager, () => {
-            gameState = 'playing';
-            const newLevelManager = new LevelManager(game, inputManager, () => {
-              gameState = 'win';
-              const newWinScreen = new WinScreen(inputManager, () => {}, () => {
-                gameState = 'menu';
-                game.setScene(startMenu);
-              });
-              game.setScene(newWinScreen);
-            });
-            newLevelManager.start();
-          }, () => {
-            gameState = 'menu';
-            game.setScene(startMenu);
-          });
-          game.setScene(winScreen);
-        });
-        levelManager.start();
-      },
-      () => {
-        // Quit to menu
-        gameState = 'menu';
-        game.setScene(startMenu);
-        currentScene = startMenu;
-      }
-    );
-  };
+  // Start the game from menu
+  gameStateManager.start();
 
   // Update loop with game state management
   const originalUpdate = game.update.bind(game);
   game.update = (deltaTime: number) => {
     inputManager.update();
-    
-    // Check for pause input
-    const pauseAction = inputManager.getAction('Pause');
-    if (pauseAction?.Pressed && gameState === 'playing') {
-      gameState = 'paused';
-      const pauseMenu = createPauseMenu();
-      game.setScene(pauseMenu);
-    }
-    
-    if (gameState === 'playing') {
-      // Level manager handles its own updates now
-      currentScene = game.CurrentScene;
-    }
-    
+    gameStateManager.update();
     originalUpdate(deltaTime);
   };
 
