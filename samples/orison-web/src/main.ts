@@ -1,44 +1,17 @@
 import { Game } from './core/Game';
-import { Scene } from './core/Scene';
-import { Entity } from './core/Entity';
-import { Transform3D } from './components/Transform3D';
-import { MeshRenderer } from './components/MeshRenderer';
-import { Camera3D } from './components/Camera3D';
-import { Light, LightType } from './components/Light';
-import { CanvasLayer } from './components/CanvasLayer';
 import { InputActionManager } from './input/InputAction';
-import { ParticleSystem, ParticleOptions } from './components/ParticleSystem';
-import { Collider3D } from './components/Collider3D';
-import * as THREE from 'three';
-
-import { GameStateManager } from './game/GameStateManager';
-
-// Simple Vector3 helper for distance calculation
-class VectorHelper {
-  static Distance(a: { x: number; y: number; z: number }, b: { x: number; y: number; z: number }): number {
-    const dx = a.x - b.x;
-    const dy = a.y - b.y;
-    const dz = a.z - b.z;
-    return Math.sqrt(dx * dx + dy * dy + dz * dz);
-  }
-}
+import { ExplorationScene } from './game/ExplorationScene';
+import { EnhancedRenderer } from './rendering/EnhancedRenderer';
+import { StartScreen } from './ui/StartScreen';
+import { PlatformerScene } from './game/PlatformerScene';
 
 /**
- * STELLATE - Quantum Realm Puzzle Platformer
- * Based on the true story of Edward Mukuka Nkoloso and the Zambian Space Program
+ * MESSENGER - Browser-based spherical planet delivery game
+ * Deliver letters and packages across a tiny planet!
  */
 
-// Input constants
-const MOVE_LEFT = 'MoveLeft';
-const MOVE_RIGHT = 'MoveRight';
-const MOVE_UP = 'MoveUp';
-const MOVE_DOWN = 'MoveDown';
-const JUMP = 'Jump';
-const ROTATE_LEFT = 'RotateLeft';
-const ROTATE_RIGHT = 'RotateRight';
-const REWIND = 'Rewind';
-const TOGGLE_CAMERA = 'ToggleCamera';
-const PAUSE = 'Pause';
+// Set to true to test platformer, false for exploration
+const TEST_PLATFORMER = true;
 
 /**
  * Initialize the game.
@@ -50,64 +23,57 @@ async function init(): Promise<void> {
     return;
   }
 
-  const game = new Game(canvas);
+  if (TEST_PLATFORMER) {
+    // Test platformer scene directly
+    const platformer = new PlatformerScene(canvas);
+    await platformer.initialize();
+
+    let lastTime = performance.now();
+    function gameLoop() {
+      const currentTime = performance.now();
+      const deltaTime = (currentTime - lastTime) / 1000;
+      lastTime = currentTime;
+
+      platformer.update(deltaTime);
+      platformer.render();
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    gameLoop();
+
+    window.addEventListener('resize', () => {
+      platformer.resize(canvas.width, canvas.height);
+    });
+
+    console.log('Platformer initialized!');
+    return;
+  }
+
+  // Original exploration game
+  const game = new Game(canvas, true);
   const inputManager = new InputActionManager();
-
-  // Setup inputs
-  const moveLeft = inputManager.createAction(MOVE_LEFT);
-  moveLeft.addKey('KeyA').addKey('ArrowLeft');
-  
-  const moveRight = inputManager.createAction(MOVE_RIGHT);
-  moveRight.addKey('KeyD').addKey('ArrowRight');
-  
-  const moveUp = inputManager.createAction(MOVE_UP);
-  moveUp.addKey('KeyW').addKey('ArrowUp');
-  
-  const moveDown = inputManager.createAction(MOVE_DOWN);
-  moveDown.addKey('KeyS').addKey('ArrowDown');
-  
-  const jump = inputManager.createAction(JUMP);
-  jump.addKey('Space');
-  
-  const rotateLeft = inputManager.createAction(ROTATE_LEFT);
-  rotateLeft.addKey('KeyQ');
-  
-  const rotateRight = inputManager.createAction(ROTATE_RIGHT);
-  rotateRight.addKey('KeyE');
-  
-  const rewind = inputManager.createAction(REWIND);
-  rewind.addKey('ShiftLeft').addKey('ShiftRight');
-  
-  const toggleCamera = inputManager.createAction(TOGGLE_CAMERA);
-  toggleCamera.addKey('KeyC');
-  
-  const pause = inputManager.createAction(PAUSE);
-  pause.addKey('Escape');
-
   inputManager.setupEventListeners();
 
-  // Game state management using clean state machine
-  const gameStateManager = new GameStateManager(game, inputManager);
+  const renderer = game.Renderer as EnhancedRenderer;
+  if (!renderer) {
+    console.error('Failed to get enhanced renderer');
+    return;
+  }
 
-  await game.start();
+  new StartScreen(async (name, customization) => {
+    const explorationScene = new ExplorationScene(inputManager, renderer, false);
+    explorationScene.setCustomization(customization);
+    game.setUsePhysics(false);
+    await game.start();
+    game.setScene(explorationScene);
 
-  // Start the game from menu
-  gameStateManager.start();
+    window.addEventListener('resize', () => {
+      game.resize();
+    });
 
-  // Update loop with game state management
-  const originalUpdate = game.update.bind(game);
-  game.update = (deltaTime: number) => {
-    inputManager.update();
-    gameStateManager.update();
-    originalUpdate(deltaTime);
-  };
-
-  // Handle window resize
-  window.addEventListener('resize', () => {
-    game.resize();
+    console.log('Messenger initialized - welcome, ' + name + '!');
   });
-
-  console.log('STELLATE modular engine initialized');
 }
 
 // Start when DOM is ready

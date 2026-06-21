@@ -9,6 +9,15 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: true,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'three-vendor': ['three'],
+          'physics-vendor': ['@dimforge/rapier3d-compat'],
+        }
+      }
+    },
+    chunkSizeWarningLimit: 1000
   },
   publicDir: 'public',
   base: process.env.NODE_ENV === 'production' ? '/_0rison/' : '/',

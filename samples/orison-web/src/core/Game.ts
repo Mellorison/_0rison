@@ -1,5 +1,6 @@
 import { Scene } from './Scene';
 import { ThreeRenderer } from '../rendering/ThreeRenderer';
+import { EnhancedRenderer } from '../rendering/EnhancedRenderer';
 import { PhysicsWorld } from '../physics/PhysicsWorld';
 
 /**
@@ -8,16 +9,23 @@ import { PhysicsWorld } from '../physics/PhysicsWorld';
 export class Game {
   private scenes: Scene[] = [];
   private currentScene: Scene | null = null;
-  private renderer: ThreeRenderer | null = null;
+  private renderer: ThreeRenderer | EnhancedRenderer | null = null;
   private running: boolean = false;
   private lastTime: number = 0;
+  private usePhysics: boolean = true;
+  private frameCount: number = 0;
+  private frameTimeAccumulator: number = 0;
+  private lastFpsLog: number = 0;
 
   /**
    * Creates a new game instance.
    * @param canvas The canvas element to render to.
+   * @param useEnhancedRenderer Whether to use the enhanced cel-shaded renderer.
    */
-  constructor(canvas: HTMLCanvasElement) {
-    this.renderer = new ThreeRenderer(canvas);
+  constructor(canvas: HTMLCanvasElement, useEnhancedRenderer: boolean = false) {
+    this.renderer = useEnhancedRenderer 
+      ? new EnhancedRenderer(canvas) 
+      : new ThreeRenderer(canvas);
   }
 
   /**
@@ -30,7 +38,7 @@ export class Game {
   /**
    * Gets the renderer.
    */
-  get Renderer(): ThreeRenderer | null {
+  get Renderer(): ThreeRenderer | EnhancedRenderer | null {
     return this.renderer;
   }
 
@@ -80,6 +88,7 @@ export class Game {
     
     this.running = true;
     this.lastTime = performance.now();
+    this.lastFpsLog = this.lastTime;
     this.gameLoop();
   }
 
@@ -97,11 +106,24 @@ export class Game {
     if (!this.running) return;
 
     const currentTime = performance.now();
-    const deltaTime = (currentTime - this.lastTime) / 1000; // Convert to seconds
+    const frameTimeMs = currentTime - this.lastTime;
+    const deltaTime = frameTimeMs / 1000; // Convert to seconds
     this.lastTime = currentTime;
 
     this.update(deltaTime);
     this.render();
+
+    // Frame time tracking
+    this.frameCount++;
+    this.frameTimeAccumulator += frameTimeMs;
+    if (currentTime - this.lastFpsLog > 2000) {
+      const avgFrameTime = this.frameTimeAccumulator / this.frameCount;
+      const fps = this.frameCount / ((currentTime - this.lastFpsLog) / 1000);
+      console.log(`[Perf] Avg frame time: ${avgFrameTime.toFixed(1)}ms (${fps.toFixed(0)} FPS)`);
+      this.frameCount = 0;
+      this.frameTimeAccumulator = 0;
+      this.lastFpsLog = currentTime;
+    }
 
     requestAnimationFrame(this.gameLoop);
   };
@@ -111,12 +133,21 @@ export class Game {
    * @param deltaTime Time since last update in seconds.
    */
   update(deltaTime: number): void {
-    // Step physics
-    PhysicsWorld.Instance.step(deltaTime);
+    // Step physics only if enabled
+    if (this.usePhysics) {
+      PhysicsWorld.Instance.step(deltaTime);
+    }
 
     if (this.currentScene) {
       this.currentScene.update(deltaTime);
     }
+  }
+
+  /**
+   * Sets whether to use physics.
+   */
+  setUsePhysics(enabled: boolean): void {
+    this.usePhysics = enabled;
   }
 
   /**
