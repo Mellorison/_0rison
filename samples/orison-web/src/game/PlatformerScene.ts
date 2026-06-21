@@ -807,16 +807,6 @@ export class PlatformerScene {
     this.quantumItems.push({ x, y, mesh, body, type, pickedUp: false, glowTime: 0 });
   }
 
-  private setupQuests(): void {
-    this.quests = [
-      { id: 1, giver: 'Mutale', recipient: 'Nkandu', item: 'quantum_package', completed: false },
-      { id: 2, giver: 'Bwalya', recipient: 'Mabvuto', item: 'data_crystal', completed: false },
-      { id: 3, giver: 'Nalube', recipient: 'Chileshe', item: 'data_crystal', completed: false },
-      { id: 4, giver: 'Nkandu', recipient: 'Bwalya', item: 'quantum_package', completed: false },
-      { id: 5, giver: 'Chileshe', recipient: 'Mutale', item: 'data_crystal', completed: false }
-    ];
-  }
-
   public update(deltaTime: number): void {
     this.time += deltaTime;
     if (this.cutsceneActive) {
@@ -933,6 +923,10 @@ export class PlatformerScene {
 
     for (const v of this.villagers) {
       if (Math.abs(pos.x - v.x) < 2.5 && Math.abs(pos.y - v.y) < 2.5) {
+        if (v.name === 'Shrine') {
+          this.startMiniGame();
+          return;
+        }
         this.startDialogue(v);
         return;
       }
@@ -972,7 +966,6 @@ export class PlatformerScene {
       if (this.currentVillager.hasQuest && !this.currentQuest) {
         this.assignQuest(this.currentVillager.name);
       }
-      // Shop purchases after dialogue
       if (this.currentVillager.name === 'Upgrader') {
         this.tryPurchaseUpgrade();
       }
@@ -1029,8 +1022,10 @@ export class PlatformerScene {
     item.pickedUp = true;
     this.scene.remove(item.mesh);
     this.inventory.push(item.type);
-    this.showNotification(`Acquired ${item.type.replace('_', ' ')}!`);
+    this.quantumEnergy += 1;
+    this.showNotification(`Acquired ${item.type.replace('_', ' ')}! +1 Energy`);
     this.updateInventoryUI();
+    this.updateUI();
   }
 
   private tryDeliver(hut: Hut): void {
@@ -1051,9 +1046,9 @@ export class PlatformerScene {
     this.inventory.splice(idx, 1);
     this.currentQuest.completed = true;
     this.deliveredCount++;
-    this.showNotification(`Quantum delivery complete! ${this.currentQuest.recipient} received ${this.currentQuest.item.replace('_', ' ')}.`);
+    this.quantumEnergy += 3;
+    this.showNotification(`Quantum delivery complete! +3 Energy!`);
 
-    // Flash hut ring
     if (hut.quantumRing) {
       const mat = hut.quantumRing.material as THREE.MeshStandardMaterial;
       mat.emissiveIntensity = 2.0;
@@ -1061,6 +1056,7 @@ export class PlatformerScene {
 
     this.currentQuest = null;
     this.updateInventoryUI();
+    this.updateUI();
 
     if (this.deliveredCount >= this.totalQuests) {
       this.showGameComplete();
