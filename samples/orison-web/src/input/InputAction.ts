@@ -193,6 +193,29 @@ export class InputActionManager {
   };
   private previousMouseX: number = 0;
   private previousMouseY: number = 0;
+  private keyDownHandler: (e: KeyboardEvent) => void;
+  private keyUpHandler: (e: KeyboardEvent) => void;
+  private mouseDownHandler: (e: MouseEvent) => void;
+  private mouseUpHandler: (e: MouseEvent) => void;
+  private mouseMoveHandler: (e: MouseEvent) => void;
+  private blurHandler: () => void;
+
+  constructor() {
+    this.keyDownHandler = (e) => {
+      this.handleKeyDown(e.code);
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(e.code)) {
+        e.preventDefault();
+      }
+    };
+    this.keyUpHandler = (e) => this.handleKeyUp(e.code);
+    this.mouseDownHandler = (e) => this.handleMouseDown(e.button);
+    this.mouseUpHandler = (e) => this.handleMouseUp(e.button);
+    this.mouseMoveHandler = (e) => this.handleMouseMove(e.clientX, e.clientY);
+    this.blurHandler = () => {
+      this.inputState.keys = {};
+      this.inputState.mouseButtons = {};
+    };
+  }
 
   /**
    * Creates a new input action.
@@ -276,21 +299,23 @@ export class InputActionManager {
    * Sets up event listeners.
    */
   setupEventListeners(): void {
-    window.addEventListener('keydown', (e) => this.handleKeyDown(e.code));
-    window.addEventListener('keyup', (e) => this.handleKeyUp(e.code));
-    window.addEventListener('mousedown', (e) => this.handleMouseDown(e.button));
-    window.addEventListener('mouseup', (e) => this.handleMouseUp(e.button));
-    window.addEventListener('mousemove', (e) => this.handleMouseMove(e.clientX, e.clientY));
+    window.addEventListener('keydown', this.keyDownHandler);
+    window.addEventListener('keyup', this.keyUpHandler);
+    window.addEventListener('mousedown', this.mouseDownHandler);
+    window.addEventListener('mouseup', this.mouseUpHandler);
+    window.addEventListener('mousemove', this.mouseMoveHandler);
+    window.addEventListener('blur', this.blurHandler);
   }
 
   /**
    * Removes event listeners.
    */
   removeEventListeners(): void {
-    window.removeEventListener('keydown', (e) => this.handleKeyDown(e.code));
-    window.removeEventListener('keyup', (e) => this.handleKeyUp(e.code));
-    window.removeEventListener('mousedown', (e) => this.handleMouseDown(e.button));
-    window.removeEventListener('mouseup', (e) => this.handleMouseUp(e.button));
-    window.removeEventListener('mousemove', (e) => this.handleMouseMove(e.clientX, e.clientY));
+    window.removeEventListener('keydown', this.keyDownHandler);
+    window.removeEventListener('keyup', this.keyUpHandler);
+    window.removeEventListener('mousedown', this.mouseDownHandler);
+    window.removeEventListener('mouseup', this.mouseUpHandler);
+    window.removeEventListener('mousemove', this.mouseMoveHandler);
+    window.removeEventListener('blur', this.blurHandler);
   }
 }
