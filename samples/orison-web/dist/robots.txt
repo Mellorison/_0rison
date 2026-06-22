@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://orison-web.com/sitemap.xml

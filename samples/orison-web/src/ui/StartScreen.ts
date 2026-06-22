@@ -59,7 +59,8 @@ export class StartScreen {
             margin-bottom: 20px;
             box-sizing: border-box;
             text-align: center;
-          " value="Messenger">
+            outline: none;
+          " onfocus="this.style.border='2px solid #3498db'; this.style.boxShadow='0 0 8px rgba(52, 152, 219, 0.5)';" onblur="this.style.border='2px solid #ddd'; this.style.boxShadow='none';" value="Messenger">
           
           <div style="margin-bottom: 20px;">
             <p style="font-size: 14px; color: #666; margin-bottom: 10px;">Customize your character</p>
@@ -98,7 +99,8 @@ export class StartScreen {
             border-radius: 8px;
             cursor: pointer;
             transition: transform 0.2s, background 0.2s;
-          ">START DELIVERING</button>
+            outline: none;
+          " onfocus="this.style.outline='3px solid #3498db'; this.style.outlineOffset='2px';" onblur="this.style.outline='none';">START DELIVERING</button>
           
           <div style="margin-top: 20px; display: flex; gap: 20px; justify-content: center;">
             <span style="font-size: 13px; color: #888;">WASD / Arrow Keys to move</span>

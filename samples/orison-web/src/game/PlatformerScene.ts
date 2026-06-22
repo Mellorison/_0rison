@@ -118,7 +118,7 @@ export class PlatformerScene {
   private stars: THREE.Mesh[] = [];
   private collectibles: Collectible[] = [];
   private collectiblesFound: number = 0;
-  private totalCollectibles: number = 8;
+  private totalCollectibles: number = 21;
 
   // Delivery System
   private quests: QuantumDelivery[] = [];
@@ -148,6 +148,11 @@ export class PlatformerScene {
   private cutsceneIndex: number = 0;
   private cutsceneElement: HTMLElement | null = null;
 
+  // Title Screen
+  private gameStarted: boolean = false;
+  private titleScreenElement: HTMLElement | null = null;
+  private rapierInitialized: boolean = false;
+
   // Dialogue
   private dialogueActive: boolean = false;
   private dialogueText: HTMLElement | null = null;
@@ -173,12 +178,13 @@ export class PlatformerScene {
   private touchRight: boolean = false;
   private touchJump: boolean = false;
   private touchInteract: boolean = false;
+  private lastDialogueInputTime: number = 0;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x1a0a2e);
-    this.scene.fog = new THREE.Fog(0x1a0a2e, 20, 60);
+    this.scene.background = new THREE.Color(0x2a1a4e);
+    this.scene.fog = new THREE.Fog(0x2a1a4e, 30, 80);
 
     const aspect = canvas.width / canvas.height;
     const viewSize = 16;
@@ -196,7 +202,13 @@ export class PlatformerScene {
 
     this.setupLighting();
     this.createUI();
+    this.createTitleScreen();
     this.setupMobileControls();
+
+    // Initialize RAPIER once
+    RAPIER.init().then(() => {
+      this.rapierInitialized = true;
+    });
   }
 
   private createUI(): void {
@@ -217,7 +229,7 @@ export class PlatformerScene {
 
     this.collectibleElement = document.createElement('div');
     this.collectibleElement.style.cssText = 'position:absolute;top:100px;right:20px;color:#ffd700;font:14px Arial;background:rgba(10,0,30,0.7);padding:8px 12px;border-radius:8px;border:1px solid #ffd700;text-shadow:0 0 8px #ffd700;';
-    this.collectibleElement.textContent = 'Artifacts: 0/8';
+    this.collectibleElement.textContent = 'Artifacts: 0/21';
     document.body.appendChild(this.collectibleElement);
 
     this.inventoryElement = document.createElement('div');
@@ -261,6 +273,54 @@ export class PlatformerScene {
     document.body.appendChild(this.cutsceneElement);
   }
 
+  private createTitleScreen(): void {
+    this.titleScreenElement = document.createElement('div');
+    this.titleScreenElement.style.cssText = 'position:absolute;top:0;left:0;right:0;bottom:0;background:linear-gradient(135deg, #1a0a3e 0%, #2a1a5e 50%, #1a0a3e 100%);color:#00ffcc;display:flex;flex-direction:column;justify-content:center;align-items:center;z-index:400;';
+    this.titleScreenElement.innerHTML = `
+      <div style="font-size:48px;font-weight:bold;color:#00ffcc;text-shadow:0 0 20px #00ffcc,0 0 40px #00ffcc;margin-bottom:10px;">QUANTUM AFRICAN</div>
+      <div style="font-size:42px;font-weight:bold;color:#ff66ff;text-shadow:0 0 20px #ff66ff,0 0 40px #ff66ff;margin-bottom:30px;">MESSENGER</div>
+      <div style="font-size:18px;color:#ffd700;margin-bottom:40px;text-align:center;max-width:500px;">
+        Deliver quantum data crystals across Zambian villages in the year 2147.<br>
+        Collect artifacts, upgrade your abilities, and save the quantum network!
+      </div>
+      <div style="font-size:16px;color:#00ffff;margin-bottom:30px;">
+        Controls: Arrow Keys to move | Space to jump | E to interact
+      </div>
+      <button id="start-btn" style="padding:15px 50px;font-size:24px;background:linear-gradient(135deg, #00ffcc, #0099aa);color:#1a0a3e;border:none;border-radius:12px;cursor:pointer;font-weight:bold;box-shadow:0 0 20px rgba(0,255,204,0.5);transition:transform 0.2s;outline:none;" onfocus="this.style.outline='3px solid #ff66ff'; this.style.outlineOffset='2px';" onblur="this.style.outline='none';">
+        START GAME
+      </button>
+    `;
+    document.body.appendChild(this.titleScreenElement);
+
+    const startBtn = document.getElementById('start-btn');
+    if (startBtn) {
+      startBtn.addEventListener('click', () => this.startGame());
+      startBtn.addEventListener('mouseenter', () => startBtn.style.transform = 'scale(1.05)');
+      startBtn.addEventListener('mouseleave', () => startBtn.style.transform = 'scale(1)');
+    }
+  }
+
+  private async startGame(): Promise<void> {
+    if (this.titleScreenElement) {
+      this.titleScreenElement.style.display = 'none';
+    }
+    this.gameStarted = true;
+    await this.initializeGame();
+  }
+
+  private async initializeGame(): Promise<void> {
+    if (!this.rapierInitialized) {
+      await RAPIER.init();
+      this.rapierInitialized = true;
+    }
+    if (!this.world) {
+      this.world = new RAPIER.World({ x: 0, y: -9.81, z: 0 });
+    }
+    this.createStars();
+    this.loadLevel(0);
+    this.playOpeningCutscene();
+  }
+
   private setupMobileControls(): void {
     const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
     if (!isTouch) return;
@@ -292,17 +352,10 @@ export class PlatformerScene {
     document.body.appendChild(container);
   }
 
-  public async initialize(): Promise<void> {
-    await RAPIER.init();
-    this.world = new RAPIER.World({ x: 0, y: -9.81, z: 0 });
-    this.createStars();
-    this.loadLevel(0);
-    this.playOpeningCutscene();
-  }
-
   private setupLighting(): void {
-    this.scene.add(new THREE.AmbientLight(0x6644aa, 0.6));
-    this.scene.add(new THREE.DirectionalLight(0xffaa44, 0.4));
+    this.scene.add(new THREE.AmbientLight(0x8888cc, 0.8));
+    this.scene.add(new THREE.DirectionalLight(0xffcc66, 0.7));
+    this.scene.add(new THREE.PointLight(0x00ffcc, 0.5, 50));
   }
 
   private loadLevel(levelIndex: number): void {
@@ -316,7 +369,10 @@ export class PlatformerScene {
 
     const configs = this.getLevelConfigs();
     const config = configs[levelIndex];
-    if (!config) return;
+    if (!config) {
+      console.warn(`Level config not found for index: ${levelIndex}`);
+      return;
+    }
 
     this.scene.background = new THREE.Color(config.skyColor);
     if (this.levelElement) this.levelElement.textContent = config.name;
@@ -324,21 +380,27 @@ export class PlatformerScene {
     this.createGround(config.groundColor);
     this.createPlayer();
 
-    for (const h of config.huts) {
-      this.createHut(h.x, this.groundLevel, h.owner, h.color);
+    if (config.huts) {
+      for (const h of config.huts) {
+        this.createHut(h.x, this.groundLevel, h.owner, h.color);
+      }
     }
 
-    for (const v of config.villagers) {
-      this.createVillager(v.x, this.groundLevel + 1.2, v.name, v.dialogue, v.hasQuest, v.glow);
+    if (config.villagers) {
+      for (const v of config.villagers) {
+        this.createVillager(v.x, this.groundLevel + 1.2, v.name, v.dialogue, v.hasQuest, v.glow);
+      }
     }
 
-    this.quests = config.quests;
+    this.quests = config.quests || [];
     this.setupQuantumItemsForLevel(levelIndex);
     this.setupCollectiblesForLevel(levelIndex);
     this.createBaobabsForLevel(levelIndex);
     this.createQuantumClouds();
     this.createUpgradeMerchant(levelIndex);
     this.createMiniGameShrine(levelIndex);
+    this.createPlatformsForLevel(levelIndex);
+    this.createEnergyOrbsForLevel(levelIndex);
   }
 
   private getLevelConfigs(): LevelConfig[] {
@@ -346,33 +408,33 @@ export class PlatformerScene {
       {
         name: 'Village of Zambezi',
         groundColor: 0x8b6914,
-        skyColor: 0x1a0a2e,
+        skyColor: 0x3a2a5e,
         huts: [
           { owner: 'Chileshe', x: -18, color: 0xc4621a },
           { owner: 'Mutale', x: -6, color: 0xd4a574 },
-          { owner: 'Nkandu', x: 8, color: 0xb87333 },
+          { owner: 'Sipho', x: 8, color: 0xb87333 },
           { owner: 'Bwalya', x: 22, color: 0xcd7f32 },
           { owner: 'Mabvuto', x: 38, color: 0xa0522d }
         ],
         villagers: [
           { name: 'Nalube', x: -12, dialogue: ['Welcome to the quantum village of Zambezi!','I am the village quantum keeper.','We need you to deliver quantum data crystals!'], hasQuest: true, glow: 0x00ffcc },
           { name: 'Chileshe', x: -2, dialogue: ['Muli bwanji! I am waiting for a data crystal from Mutale.','The quantum network depends on these deliveries.'], hasQuest: false, glow: 0xff6600 },
-          { name: 'Mutale', x: 12, dialogue: ['Baume! I have a quantum package for Nkandu.','Can you deliver it through the quantum realm?'], hasQuest: true, glow: 0xff00ff },
-          { name: 'Nkandu', x: 28, dialogue: ['Welcome traveler! Bwalya should have sent me a crystal.','The ancestors whisper through the quantum field...'], hasQuest: false, glow: 0xffff00 },
+          { name: 'Mutale', x: 12, dialogue: ['Baume! I have a quantum package for Sipho.','Can you deliver it through the quantum realm?'], hasQuest: true, glow: 0xff00ff },
+          { name: 'Sipho', x: 28, dialogue: ['Welcome traveler! Bwalya should have sent me a crystal.','The ancestors whisper through the quantum field...'], hasQuest: false, glow: 0xffff00 },
           { name: 'Bwalya', x: 44, dialogue: ['Greetings quantum messenger! I need to send a crystal to Mabvuto.','The quantum entanglement must be maintained!'], hasQuest: true, glow: 0x00ffff }
         ],
         quests: [
-          { id: 1, giver: 'Mutale', recipient: 'Nkandu', item: 'quantum_package', completed: false },
+          { id: 1, giver: 'Mutale', recipient: 'Sipho', item: 'quantum_package', completed: false },
           { id: 2, giver: 'Bwalya', recipient: 'Mabvuto', item: 'data_crystal', completed: false },
           { id: 3, giver: 'Nalube', recipient: 'Chileshe', item: 'data_crystal', completed: false },
-          { id: 4, giver: 'Nkandu', recipient: 'Bwalya', item: 'quantum_package', completed: false },
+          { id: 4, giver: 'Sipho', recipient: 'Bwalya', item: 'quantum_package', completed: false },
           { id: 5, giver: 'Chileshe', recipient: 'Mutale', item: 'data_crystal', completed: false }
         ]
       },
       {
         name: 'Kafue Outpost',
         groundColor: 0x6b5b3e,
-        skyColor: 0x0d1b2a,
+        skyColor: 0x2d3b4a,
         huts: [
           { owner: 'Mapalo', x: -16, color: 0x8b5a2b },
           { owner: 'Namukonda', x: -4, color: 0x9c7c4c },
@@ -398,7 +460,7 @@ export class PlatformerScene {
       {
         name: 'Luangpa Sanctuary',
         groundColor: 0x4a6741,
-        skyColor: 0x1a1a3e,
+        skyColor: 0x3a4a6e,
         huts: [
           { owner: 'Chibuye', x: -14, color: 0x5a8c4a },
           { owner: 'Mukuka', x: -2, color: 0x6b9c5b },
@@ -459,7 +521,9 @@ export class PlatformerScene {
 
     const bd = RAPIER.RigidBodyDesc.fixed().setTranslation(x, y, 0);
     const body = this.world.createRigidBody(bd);
-    this.world.createCollider(RAPIER.ColliderDesc.ball(0.3).setSensor(true), body);
+    if (body) {
+      this.world.createCollider(RAPIER.ColliderDesc.ball(0.3).setSensor(true), body);
+    }
     this.collectibles.push({ x, y, mesh, body, name, collected: false });
   }
 
@@ -494,7 +558,9 @@ export class PlatformerScene {
 
     const bd = RAPIER.RigidBodyDesc.fixed().setTranslation(32, this.groundLevel + 1.2, 0);
     const pb = this.world.createRigidBody(bd);
-    this.world.createCollider(RAPIER.ColliderDesc.cuboid(0.3, 0.6, 0.12).setSensor(true), pb);
+    if (pb) {
+      this.world.createCollider(RAPIER.ColliderDesc.cuboid(0.3, 0.6, 0.12).setSensor(true), pb);
+    }
 
     const shopVillager: Villager = {
       name: 'Upgrader', x: 32, y: this.groundLevel + 1.2,
@@ -526,7 +592,9 @@ export class PlatformerScene {
 
     const bd = RAPIER.RigidBodyDesc.fixed().setTranslation(x, this.groundLevel, 0);
     const body = this.world.createRigidBody(bd);
-    this.world.createCollider(RAPIER.ColliderDesc.cuboid(0.6, 0.8, 0.3).setSensor(true), body);
+    if (body) {
+      this.world.createCollider(RAPIER.ColliderDesc.cuboid(0.6, 0.8, 0.3).setSensor(true), body);
+    }
 
     this.villagers.push({
       name: 'Shrine', x, y: this.groundLevel,
@@ -534,6 +602,53 @@ export class PlatformerScene {
       dialogue: ['This is the Quantum Memory Shrine!','Interact to test your quantum memory.','Match the crystal sequence to earn energy!'],
       hasQuest: false, glowColor: 0xff00ff
     });
+  }
+
+  private createPlatformsForLevel(level: number): void {
+    if (!this.world) return;
+    const platforms = [
+      [{ x: -8, y: 2, w: 4 }, { x: 6, y: 3, w: 3 }, { x: 20, y: 4, w: 5 }],
+      [{ x: -10, y: 2.5, w: 4 }, { x: 8, y: 3.5, w: 3 }, { x: 24, y: 4.5, w: 4 }],
+      [{ x: -6, y: 2, w: 5 }, { x: 10, y: 3, w: 4 }, { x: 26, y: 4, w: 3 }]
+    ];
+    for (const p of platforms[level] || []) {
+      const geom = new THREE.BoxGeometry(p.w, 0.3, 0.5);
+      const mat = new THREE.MeshStandardMaterial({ color: 0x4a6a8a, emissive: 0x00aaff, emissiveIntensity: 0.3 });
+      const mesh = new THREE.Mesh(geom, mat);
+      mesh.position.set(p.x, this.groundLevel + p.y, 0);
+      this.scene.add(mesh);
+
+      const bd = RAPIER.RigidBodyDesc.fixed().setTranslation(p.x, this.groundLevel + p.y, 0);
+      const body = this.world.createRigidBody(bd);
+      if (body) {
+        this.world.createCollider(RAPIER.ColliderDesc.cuboid(p.w / 2, 0.15, 0.25).setFriction(0.8), body);
+      }
+      this.platforms.push({ body, mesh });
+    }
+  }
+
+  private createEnergyOrbsForLevel(level: number): void {
+    if (!this.world) return;
+    const positions = [
+      [{ x: -8, y: 3 }, { x: 6, y: 4 }, { x: 20, y: 5 }],
+      [{ x: -10, y: 3.5 }, { x: 8, y: 4.5 }, { x: 24, y: 5.5 }],
+      [{ x: -6, y: 3 }, { x: 10, y: 4 }, { x: 26, y: 5 }]
+    ];
+    for (const p of positions[level] || []) {
+      const geom = new THREE.SphereGeometry(0.15, 8, 8);
+      const mat = new THREE.MeshStandardMaterial({ color: 0x00ff00, emissive: 0x00ff00, emissiveIntensity: 0.8 });
+      const mesh = new THREE.Mesh(geom, mat);
+      mesh.position.set(p.x, this.groundLevel + p.y, 0.2);
+      this.scene.add(mesh);
+
+      const bd = RAPIER.RigidBodyDesc.fixed().setTranslation(p.x, this.groundLevel + p.y, 0);
+      const body = this.world.createRigidBody(bd);
+      if (body) {
+        this.world.createCollider(RAPIER.ColliderDesc.ball(0.2).setSensor(true), body);
+      }
+
+      this.collectibles.push({ x: p.x, y: this.groundLevel + p.y, mesh, body, name: 'Energy Orb', collected: false });
+    }
   }
 
   private createStars(): void {
@@ -606,7 +721,9 @@ export class PlatformerScene {
       .setLinearDamping(0.5)
       .setAngularDamping(1.0);
     this.playerBody = this.world.createRigidBody(bd);
-    this.world.createCollider(RAPIER.ColliderDesc.cuboid(0.25, 0.6, 0.1).setFriction(0.5), this.playerBody);
+    if (this.playerBody) {
+      this.world.createCollider(RAPIER.ColliderDesc.cuboid(0.25, 0.6, 0.1).setFriction(0.5), this.playerBody);
+    }
   }
 
   private createGround(groundColor: number): void {
@@ -620,7 +737,9 @@ export class PlatformerScene {
 
     const bd = RAPIER.RigidBodyDesc.fixed().setTranslation(0, this.groundLevel, 0);
     const body = this.world.createRigidBody(bd);
-    this.world.createCollider(RAPIER.ColliderDesc.cuboid(this.worldWidth / 2, 1, 0.5).setFriction(0.8), body);
+    if (body) {
+      this.world.createCollider(RAPIER.ColliderDesc.cuboid(this.worldWidth / 2, 1, 0.5).setFriction(0.8), body);
+    }
     this.platforms.push({ body, mesh });
 
     // Savanna grass layer
@@ -635,43 +754,104 @@ export class PlatformerScene {
   private clearWorld(): void {
     if (!this.world) return;
 
+    // Dispose helper
+    const disposeObject = (obj: THREE.Object3D) => {
+      if (obj instanceof THREE.Mesh) {
+        if (obj.geometry) obj.geometry.dispose();
+        if (obj.material) {
+          if (Array.isArray(obj.material)) {
+            obj.material.forEach(m => m.dispose());
+          } else {
+            obj.material.dispose();
+          }
+        }
+      }
+    };
+
     // Remove all objects from scene and physics
-    for (const p of this.platforms) { this.scene.remove(p.mesh); this.world.removeRigidBody(p.body); }
+    for (const p of this.platforms) { 
+      this.scene.remove(p.mesh); 
+      disposeObject(p.mesh);
+      if (p.body) this.world.removeRigidBody(p.body); 
+    }
     this.platforms = [];
-    for (const v of this.villagers) { this.scene.remove(v.mesh); this.world.removeRigidBody(v.body); }
+    
+    for (const v of this.villagers) { 
+      if (v.mesh) {
+        this.scene.remove(v.mesh); 
+        v.mesh.traverse(disposeObject);
+      }
+      if (v.body && this.world) this.world.removeRigidBody(v.body); 
+    }
     this.villagers = [];
-    for (const h of this.huts) { this.scene.remove(h.mesh); }
+    
+    for (const h of this.huts) { 
+      if (h.mesh) {
+        this.scene.remove(h.mesh); 
+        h.mesh.traverse(disposeObject);
+      }
+    }
     this.huts = [];
-    for (const i of this.quantumItems) { if (!i.pickedUp) { this.scene.remove(i.mesh); this.world.removeRigidBody(i.body); } }
+    
+    for (const i of this.quantumItems) { 
+      if (!i.pickedUp) { 
+        this.scene.remove(i.mesh); 
+        disposeObject(i.mesh);
+        if (i.body) this.world.removeRigidBody(i.body); 
+      } 
+    }
     this.quantumItems = [];
-    for (const c of this.collectibles) { if (!c.collected) { this.scene.remove(c.mesh); this.world.removeRigidBody(c.body); } }
+    
+    for (const c of this.collectibles) { 
+      if (!c.collected) { 
+        this.scene.remove(c.mesh); 
+        disposeObject(c.mesh);
+        if (c.body) this.world.removeRigidBody(c.body); 
+      } 
+    }
     this.collectibles = [];
-    for (const d of this.decorations) { this.scene.remove(d); }
+    
+    for (const d of this.decorations) { 
+      this.scene.remove(d); 
+      d.traverse(disposeObject);
+    }
     this.decorations = [];
-    for (const p of this.particles) { this.scene.remove(p.mesh); }
+    
+    for (const p of this.particles) { 
+      this.scene.remove(p.mesh); 
+      disposeObject(p.mesh);
+    }
     this.particles = [];
-    for (const t of this.quantumTrail) { this.scene.remove(t); }
+    
+    for (const t of this.quantumTrail) { 
+      this.scene.remove(t); 
+      disposeObject(t);
+    }
     this.quantumTrail = [];
 
-    if (this.playerMesh) { this.scene.remove(this.playerMesh); this.playerMesh = null; }
+    if (this.playerMesh) { 
+      this.scene.remove(this.playerMesh); 
+      this.playerMesh.traverse(disposeObject);
+      this.playerMesh = null; 
+    }
     if (this.playerBody) { this.world.removeRigidBody(this.playerBody); this.playerBody = null; }
   }
 
   private createHut(x: number, y: number, owner: string, wallColor: number): void {
     const g = new THREE.Group();
 
-    // Round hut base
+    // Round hut base with emissive glow
     const base = new THREE.Mesh(
       new THREE.BoxGeometry(3.5, 2.2, 0.6),
-      new THREE.MeshStandardMaterial({ color: wallColor })
+      new THREE.MeshStandardMaterial({ color: wallColor, emissive: wallColor, emissiveIntensity: 0.1 })
     );
     base.position.y = 1.1;
     g.add(base);
 
-    // Conical thatched roof
+    // Conical thatched roof with glow
     const roof = new THREE.Mesh(
       new THREE.BoxGeometry(4.5, 0.4, 0.8),
-      new THREE.MeshStandardMaterial({ color: 0x8b7355 })
+      new THREE.MeshStandardMaterial({ color: 0x8b7355, emissive: 0x8b7355, emissiveIntensity: 0.15 })
     );
     roof.position.y = 2.5;
     g.add(roof);
@@ -739,7 +919,9 @@ export class PlatformerScene {
 
     const bd = RAPIER.RigidBodyDesc.fixed().setTranslation(x, y, 0);
     const body2 = this.world.createRigidBody(bd);
-    this.world.createCollider(RAPIER.ColliderDesc.cuboid(0.25, 0.55, 0.12).setSensor(true), body2);
+    if (body2) {
+      this.world.createCollider(RAPIER.ColliderDesc.cuboid(0.25, 0.55, 0.12).setSensor(true), body2);
+    }
 
     this.villagers.push({ name, x, y, mesh: g, body: body2, dialogue, hasQuest, glowColor });
   }
@@ -802,16 +984,25 @@ export class PlatformerScene {
 
     const bd = RAPIER.RigidBodyDesc.fixed().setTranslation(x, y, 0);
     const body = this.world.createRigidBody(bd);
-    this.world.createCollider(RAPIER.ColliderDesc.cuboid(0.4, 0.4, 0.15).setSensor(true), body);
+    if (body) {
+      this.world.createCollider(RAPIER.ColliderDesc.cuboid(0.4, 0.4, 0.15).setSensor(true), body);
+    }
 
     this.quantumItems.push({ x, y, mesh, body, type, pickedUp: false, glowTime: 0 });
   }
 
   public update(deltaTime: number): void {
     this.time += deltaTime;
+    if (!this.gameStarted) return;
+
     if (this.cutsceneActive) {
       this.input.update();
-      if (this.input.InputState.keys['KeyE']) this.advanceCutscene();
+      if (this.input.InputState.keys['KeyE']) {
+        if (!this.lastDialogueInputTime || (Date.now() - this.lastDialogueInputTime > 250)) {
+          this.advanceCutscene();
+          this.lastDialogueInputTime = Date.now();
+        }
+      }
       return;
     }
     if (this.world) this.world.step();
@@ -949,11 +1140,19 @@ export class PlatformerScene {
   }
 
   private startDialogue(v: Villager): void {
+    if (this.dialogueActive) return;
     this.dialogueActive = true;
     this.currentVillager = v;
     this.dialogueIndex = 0;
     const box = document.getElementById('dialogue-box');
-    if (box) box.style.display = 'block';
+    if (box) {
+      box.style.display = 'block';
+      box.style.opacity = '0';
+      box.style.transition = 'opacity 0.3s ease';
+      setTimeout(() => {
+        if (box) box.style.opacity = '1';
+      }, 10);
+    }
     this.showDialogueText();
   }
 
@@ -961,7 +1160,16 @@ export class PlatformerScene {
     if (!this.currentVillager || !this.dialogueName || !this.dialogueText) return;
     this.dialogueName.textContent = this.currentVillager.name;
     if (this.dialogueIndex < this.currentVillager.dialogue.length) {
-      this.dialogueText.textContent = this.currentVillager.dialogue[this.dialogueIndex];
+      this.dialogueText.style.opacity = '0';
+      this.dialogueText.style.transition = 'opacity 0.2s ease';
+      const villager = this.currentVillager;
+      const index = this.dialogueIndex;
+      setTimeout(() => {
+        if (this.dialogueText && this.currentVillager === villager) {
+          this.dialogueText.textContent = villager.dialogue[index];
+          this.dialogueText.style.opacity = '1';
+        }
+      }, 50);
     } else {
       if (this.currentVillager.hasQuest && !this.currentQuest) {
         this.assignQuest(this.currentVillager.name);
@@ -995,10 +1203,17 @@ export class PlatformerScene {
 
   private handleDialogueInput(): void {
     this.input.update();
-    if (this.input.InputState.keys['KeyE']) this.advanceDialogue();
+    if (this.input.InputState.keys['KeyE']) {
+      // Small debounce to prevent rapid skipping
+      if (!this.lastDialogueInputTime || (Date.now() - this.lastDialogueInputTime > 250)) {
+        this.advanceDialogue();
+        this.lastDialogueInputTime = Date.now();
+      }
+    }
   }
 
   private advanceDialogue(): void {
+    if (!this.dialogueActive) return;
     this.dialogueIndex++;
     this.showDialogueText();
   }
@@ -1007,7 +1222,10 @@ export class PlatformerScene {
     this.dialogueActive = false;
     this.currentVillager = null;
     const box = document.getElementById('dialogue-box');
-    if (box) box.style.display = 'none';
+    if (box) {
+      box.style.opacity = '0';
+      setTimeout(() => box.style.display = 'none', 300);
+    }
   }
 
   private assignQuest(npcName: string): void {
@@ -1049,9 +1267,9 @@ export class PlatformerScene {
     this.quantumEnergy += 3;
     this.showNotification(`Quantum delivery complete! +3 Energy!`);
 
-    if (hut.quantumRing) {
-      const mat = hut.quantumRing.material as THREE.MeshStandardMaterial;
-      mat.emissiveIntensity = 2.0;
+    if (hut.quantumRing && hut.quantumRing.material) {
+      const mat = (Array.isArray(hut.quantumRing.material) ? hut.quantumRing.material[0] : hut.quantumRing.material) as THREE.MeshStandardMaterial;
+      if (mat) mat.emissiveIntensity = 2.0;
     }
 
     this.currentQuest = null;
@@ -1082,10 +1300,16 @@ export class PlatformerScene {
         <div style="font-size:16px;margin-top:15px;color:#aaa;">Press E to continue</div>
       `;
       const waitForContinue = () => {
+        if (!this.levelComplete) return; // Guard against early exit
         this.input.update();
         if (this.input.InputState.keys['KeyE']) {
-          this.gameOverlay.style.display = 'none';
-          this.playLevelTransitionCutscene();
+          if (!this.lastDialogueInputTime || (Date.now() - this.lastDialogueInputTime > 500)) {
+            this.gameOverlay!.style.display = 'none';
+            this.playLevelTransitionCutscene();
+            this.lastDialogueInputTime = Date.now();
+          } else {
+            requestAnimationFrame(waitForContinue);
+          }
         } else {
           requestAnimationFrame(waitForContinue);
         }
@@ -1096,7 +1320,7 @@ export class PlatformerScene {
       this.gameOverlay.innerHTML = `
         <div>ALL LEVELS COMPLETE!</div>
         <div style="font-size:22px;margin-top:15px;">You have saved the quantum universe!</div>
-        <div style="font-size:16px;margin-top:10px;color:#ff66ff;">Artifacts: ${this.collectiblesFound}/${this.totalCollectibles * 3}</div>
+        <div style="font-size:16px;margin-top:10px;color:#ff66ff;">Artifacts: ${this.collectiblesFound}/21</div>
         <div style="font-size:16px;margin-top:10px;color:#00ffff;">Total Energy: ${this.quantumEnergy}</div>
         <div style="font-size:14px;margin-top:15px;color:#aaa;">Refresh page to play again</div>
       `;
@@ -1183,7 +1407,7 @@ export class PlatformerScene {
       }
     }
     if (this.energyElement) this.energyElement.textContent = `Energy: ${this.quantumEnergy}`;
-    if (this.collectibleElement) this.collectibleElement.textContent = `Artifacts: ${this.collectiblesFound}/${this.totalCollectibles * this.maxLevels}`;
+    if (this.collectibleElement) this.collectibleElement.textContent = `Artifacts: ${this.collectiblesFound}/21`;
   }
 
   private updateQuantumEffects(deltaTime: number): void {
@@ -1201,8 +1425,8 @@ export class PlatformerScene {
       if (hut.quantumRing) {
         hut.quantumRing.rotation.z += deltaTime * 0.5;
         hut.quantumRing.position.y = 3.2 + Math.sin(this.time * 2 + hut.x) * 0.15;
-        const mat = hut.quantumRing.material as THREE.MeshStandardMaterial;
-        if (mat.emissiveIntensity > 0.8) mat.emissiveIntensity -= deltaTime;
+        const mat = (Array.isArray(hut.quantumRing.material) ? hut.quantumRing.material[0] : hut.quantumRing.material) as THREE.MeshStandardMaterial;
+        if (mat && mat.emissiveIntensity > 0.8) mat.emissiveIntensity -= deltaTime;
       }
     }
 
@@ -1259,11 +1483,13 @@ export class PlatformerScene {
     // Fade trail
     for (let i = this.quantumTrail.length - 1; i >= 0; i--) {
       const t = this.quantumTrail[i];
-      const mat = t.material as THREE.MeshBasicMaterial;
-      mat.opacity -= deltaTime * 2;
-      if (mat.opacity <= 0) {
-        this.scene.remove(t);
-        this.quantumTrail.splice(i, 1);
+      const mat = (Array.isArray(t.material) ? t.material[0] : t.material) as THREE.MeshBasicMaterial;
+      if (mat) {
+        mat.opacity -= deltaTime * 2;
+        if (mat.opacity <= 0) {
+          this.scene.remove(t);
+          this.quantumTrail.splice(i, 1);
+        }
       }
     }
   }
@@ -1321,10 +1547,12 @@ export class PlatformerScene {
   }
 
   public render(): void {
+    if (!this.renderer || !this.scene || !this.camera) return;
     this.renderer.render(this.scene, this.camera);
   }
 
   public resize(width: number, height: number): void {
+    if (!this.renderer || !this.camera) return;
     const aspect = width / height;
     const vs = 16;
     this.camera.left = -vs * aspect;
